@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   pgTable,
   primaryKey,
   text,
@@ -68,8 +69,15 @@ export const savedSearches = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
     query: text().notNull(),
+    category: text(),
+    resultLimit: integer().notNull().default(10),
     createdByEmail: text().notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index().on(table.createdByEmail)],
+  (table) => [
+    index().on(table.createdByEmail),
+    unique()
+      .on(table.createdByEmail, table.query, table.category)
+      .nullsNotDistinct(),
+  ],
 )

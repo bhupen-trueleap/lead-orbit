@@ -9,13 +9,15 @@ export function useSearch() {
   const [entities, setEntities] = useState<Array<SearchEntity>>([])
   const [status, setStatus] = useState<SearchStatus>('idle')
   const [message, setMessage] = useState<string | null>(null)
+  const [request, setRequest] = useState<SearchRequest | null>(null)
   const controllerRef = useRef<AbortController | null>(null)
 
-  const search = useCallback(async (request: SearchRequest) => {
+  const search = useCallback(async (input: SearchRequest) => {
     controllerRef.current?.abort()
     const controller = new AbortController()
     controllerRef.current = controller
 
+    setRequest(input)
     setEntities([])
     setMessage(null)
     setStatus('searching')
@@ -24,7 +26,7 @@ export function useSearch() {
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(request),
+        body: JSON.stringify(input),
         signal: controller.signal,
       })
 
@@ -72,5 +74,5 @@ export function useSearch() {
     }
   }, [])
 
-  return { entities, status, message, search }
+  return { entities, status, message, request, search }
 }

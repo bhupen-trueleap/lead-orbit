@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 
 import { AppShell } from '@/components/layout/app-shell'
 import { EntityTable } from '@/components/search/entity-table'
+import { SaveSearchButton } from '@/components/search/save-search-button'
 import { SearchBox } from '@/components/search/search-box'
 import {
   DEFAULT_SEARCH_LIMIT,
@@ -25,7 +26,7 @@ export const Route = createFileRoute('/searches')({
 
 function Searches() {
   const { q, category, limit } = Route.useSearch()
-  const { entities, status, message, search } = useSearch()
+  const { entities, status, message, request, search } = useSearch()
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -51,15 +52,23 @@ function Searches() {
           defaultCategory={category}
           defaultLimit={limit}
           isSearching={isSearching}
-          onSearch={(request) => void search(request)}
+          onSearch={(next) => void search(next)}
         />
 
-        <div aria-live="polite" className="text-sm text-muted-foreground">
-          {isSearching ? 'Searching…' : null}
-          {status === 'done' && entities.length === 0
-            ? 'No results found.'
-            : null}
-          {message}
+        <div className="flex items-center justify-between gap-4">
+          <div aria-live="polite" className="text-sm text-muted-foreground">
+            {isSearching ? 'Searching…' : null}
+            {status === 'done' && entities.length === 0
+              ? 'No results found.'
+              : null}
+            {message}
+          </div>
+          {request && !isSearching ? (
+            <SaveSearchButton
+              key={`${request.query}|${request.category}|${request.limit}`}
+              request={request}
+            />
+          ) : null}
         </div>
 
         {entities.length > 0 ? <EntityTable entities={entities} /> : null}

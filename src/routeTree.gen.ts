@@ -15,6 +15,7 @@ import { Route as EntitiesRouteImport } from './routes/entities'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as SavedSearchesRouteImport } from './routes/saved-searches'
 import { Route as SearchesRouteImport } from './routes/searches'
+import { Route as ApiSavedSearchesRouteImport } from './routes/api/saved-searches'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const SearchesRoute = SearchesRouteImport.update({
   path: '/searches',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSavedSearchesRoute = ApiSavedSearchesRouteImport.update({
+  id: '/api/saved-searches',
+  path: '/api/saved-searches',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSearchRoute = ApiSearchRouteImport.update({
   id: '/api/search',
   path: '/api/search',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/searches': typeof SearchesRoute
+  '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/searches': typeof SearchesRoute
+  '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/searches': typeof SearchesRoute
+  '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/saved-searches'
     | '/searches'
+    | '/api/saved-searches'
     | '/api/search'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/saved-searches'
     | '/searches'
+    | '/api/saved-searches'
     | '/api/search'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/saved-searches'
     | '/searches'
+    | '/api/saved-searches'
     | '/api/search'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   SavedSearchesRoute: typeof SavedSearchesRoute
   SearchesRoute: typeof SearchesRoute
+  ApiSavedSearchesRoute: typeof ApiSavedSearchesRoute
   ApiSearchRoute: typeof ApiSearchRoute
 }
 
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/saved-searches': {
+      id: '/api/saved-searches'
+      path: '/api/saved-searches'
+      fullPath: '/api/saved-searches'
+      preLoaderRoute: typeof ApiSavedSearchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/search': {
       id: '/api/search'
       path: '/api/search'
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   SavedSearchesRoute: SavedSearchesRoute,
   SearchesRoute: SearchesRoute,
+  ApiSavedSearchesRoute: ApiSavedSearchesRoute,
   ApiSearchRoute: ApiSearchRoute,
 }
 export const routeTree = rootRouteImport
