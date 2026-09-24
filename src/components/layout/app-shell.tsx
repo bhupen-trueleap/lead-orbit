@@ -4,15 +4,14 @@ import { appConfig, navItems } from '@/config/app'
 
 interface AppShellProps {
   children: React.ReactNode
-  activeNav?: string
 }
 
-export function AppShell({ children, activeNav }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <AppHeader appName={appConfig.name} userName={appConfig.userName} />
       <div className="flex flex-1">
-        <AppSidebar items={navItems} activeLabel={activeNav} />
+        <AppSidebar items={navItems} />
         <main className="min-w-0 flex-1 p-4 md:p-10">{children}</main>
       </div>
     </div>

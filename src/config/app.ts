@@ -6,6 +6,7 @@ import {
   Search,
   Users,
 } from 'lucide-react'
+import type { LinkProps } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
 
 export const appConfig = {
@@ -15,14 +16,15 @@ export const appConfig = {
 
 export interface NavItem {
   label: string
+  to: LinkProps['to']
   icon: LucideIcon
 }
 
 export const navItems: Array<NavItem> = [
-  { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Searches', icon: Search },
-  { label: 'Entities', icon: Users },
-  { label: 'Collections', icon: FolderOpen },
-  { label: 'Saved Searches', icon: Clock },
-  { label: 'History', icon: History },
+  { label: 'Dashboard', to: '/', icon: LayoutDashboard },
+  { label: 'Searches', to: '/searches', icon: Search },
+  { label: 'Entities', to: '/entities', icon: Users },
+  { label: 'Collections', to: '/collections', icon: FolderOpen },
+  { label: 'Saved Searches', to: '/saved-searches', icon: Clock },
+  { label: 'History', to: '/history', icon: History },
 ]

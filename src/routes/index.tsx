@@ -11,7 +11,7 @@ export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   return (
-    <AppShell activeNav="Dashboard">
+    <AppShell>
       <div className="mx-auto max-w-4xl space-y-10">
         <PageSection title="Search anything">
           <SearchBox

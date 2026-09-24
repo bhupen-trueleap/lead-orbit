@@ -1,42 +1,45 @@
+import { Link } from '@tanstack/react-router'
 import { Plus, Settings } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { NavItem } from '@/config/app'
 
 interface AppSidebarProps {
   items: Array<NavItem>
-  activeLabel?: string
 }
 
-export function AppSidebar({ items, activeLabel }: AppSidebarProps) {
+const linkClass = buttonVariants({ variant: 'ghost' }) + ' justify-start'
+const activeClass = {
+  className: 'bg-primary/15 font-medium text-foreground hover:bg-primary/20',
+}
+
+export function AppSidebar({ items }: AppSidebarProps) {
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r p-4 md:flex">
-      <Button className="mb-4 justify-start">
+      <Link to="/searches" className={buttonVariants() + ' mb-4 justify-start'}>
         <Plus />
         New Search
-      </Button>
+      </Link>
       <nav aria-label="Primary" className="flex flex-col gap-1">
-        {items.map(({ label, icon: Icon }) => {
-          const isActive = label === activeLabel
-          return (
-            <Button
-              key={label}
-              variant={isActive ? 'secondary' : 'ghost'}
-              aria-current={isActive ? 'page' : undefined}
-              className="justify-start"
-            >
-              <Icon />
-              {label}
-            </Button>
-          )
-        })}
+        {items.map(({ label, to, icon: Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            activeOptions={{ exact: true }}
+            activeProps={activeClass}
+            className={linkClass}
+          >
+            <Icon />
+            {label}
+          </Link>
+        ))}
       </nav>
       <Separator className="my-4" />
-      <Button variant="ghost" className="justify-start">
+      <Link to="/settings" activeProps={activeClass} className={linkClass}>
         <Settings />
         Settings
-      </Button>
+      </Link>
     </aside>
   )
 }

@@ -1,6 +1,7 @@
+import { Link } from '@tanstack/react-router'
 import { Bell, ChevronDown, Orbit, Settings } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,9 +25,13 @@ export function AppHeader({ appName, userName }: AppHeaderProps) {
         <Button variant="ghost" size="icon" aria-label="Notifications">
           <Bell />
         </Button>
-        <Button variant="ghost" size="icon" aria-label="Settings">
+        <Link
+          to="/settings"
+          aria-label="Settings"
+          className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+        >
           <Settings />
-        </Button>
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" />}>
             {userName}
