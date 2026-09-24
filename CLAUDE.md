@@ -1,20 +1,22 @@
-# AGENTS Rulebook
+# LeadOrbit Rulebook
 
 ## Mission
 
-- Build a simple, composable, reusable waitlist product.
+- Build LeadOrbit: a web-based intelligent search and discovery platform for people, companies, and other entities using natural-language queries.
+- Search flow: check PostgreSQL for existing data first, then use the Exa API for fresh web discovery and enrichment, store results back in PostgreSQL, and stream them to the user.
+- Keep the codebase simple, composable, and reusable.
 - Prioritize fastest load time at deployment and fast SSR.
 - Ship in small, safe, incremental steps.
 
 ## Non-Negotiable Rules
 
-- Always do small incremental git commits.
+- Never commit automatically. Only run `git commit` when explicitly asked.
+- Never add Claude/AI as author or co-author on commits: no `Co-Authored-By` trailer and no "Generated with Claude Code" lines, in commit messages or PR descriptions.
 - Always ask for technical decisions (with a recommendation) before adding a new library or paradigm.
 - No type assertions to bypass strict typing (`as`, non-null `!`, unsafe casts).
 - No unnecessary comments during implementation.
-- Ensure lint and format checks pass with zero errors/warnings before each commit.
-- Always keep TODOs up to date and sync progress in plan + todo docs when implementation starts.
-- Keep `CLAUDE.md`, plan doc, and todo doc updated.
+- Ensure lint and format checks pass with zero errors/warnings before finishing a change.
+- Keep `CLAUDE.md` updated when the project direction changes.
 - Prefer reusable code and composable building blocks.
 - Keep SSR simple and fast.
 - Avoid unnecessary complexity.
@@ -34,23 +36,12 @@
 
 ## Working Loop
 
-- Read plan and todo docs first.
 - Pick one small task.
 - Implement smallest complete slice.
-- Update todo status and unresolved questions.
-- Update plan if scope or assumptions change.
 - Run lint and format checks, fix all errors/warnings.
-- Commit that slice.
+- Report what changed and leave it uncommitted for review.
 - Repeat.
 
 ## Documentation Index (Where to Look)
 
-- Product and architecture plan: `docs/plan/ssr-plan.md`
-- Active execution tracker: `docs/todo/todo.md`
 - Project setup/context: `README.md`
-
-## Unresolved Questions Policy
-
-- Keep unresolved questions in both plan and todo docs.
-- Remove a question only when a decision is explicitly made.
-- If blocked by a question, mark related todo as blocked.
