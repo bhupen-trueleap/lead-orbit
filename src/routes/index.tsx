@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
 import { AppShell } from '@/components/layout/app-shell'
 import { PageSection } from '@/components/page-section'
@@ -10,13 +10,20 @@ import { recentSearches } from '@/lib/placeholder-data'
 export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
+  const navigate = useNavigate()
+
   return (
     <AppShell>
       <div className="mx-auto max-w-4xl space-y-10">
         <PageSection title="Search anything">
           <SearchBox
             placeholder="Find AI founders in India with 5k+ LinkedIn followers"
-            onSearch={() => undefined}
+            onSearch={({ query, category, limit }) =>
+              void navigate({
+                to: '/searches',
+                search: { q: query, category, limit },
+              })
+            }
           />
         </PageSection>
 
