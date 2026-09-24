@@ -1,20 +1,40 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { Button } from '@/components/ui/button'
+import { AppShell } from '@/components/layout/app-shell'
+import { PageSection } from '@/components/page-section'
+import { RecentSearchCard } from '@/components/search/recent-search-card'
+import { SearchBox } from '@/components/search/search-box'
+import { StatCard } from '@/components/stat-card'
+import { recentSearches } from '@/lib/placeholder-data'
 
 export const Route = createFileRoute('/')({ component: Home })
 
 function Home() {
   return (
-    <div className="p-8">
-      <h1 className="text-4xl font-bold">Welcome to Lead Orbit</h1>
-      <p className="mt-4 text-lg text-muted-foreground">
-        Edit <code>src/routes/index.tsx</code> to get started.
-      </p>
-      <div className="mt-6 flex gap-3">
-        <Button>Get started</Button>
-        <Button variant="outline">Learn more</Button>
+    <AppShell activeNav="Dashboard">
+      <div className="mx-auto max-w-4xl space-y-10">
+        <PageSection title="Search anything">
+          <SearchBox
+            placeholder="Find AI founders in India with 5k+ LinkedIn followers"
+            onSearch={() => undefined}
+          />
+        </PageSection>
+
+        <PageSection title="Recent searches">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {recentSearches.map((search) => (
+              <RecentSearchCard key={search.id} {...search} />
+            ))}
+          </div>
+        </PageSection>
+
+        <PageSection title="Recent discoveries">
+          <StatCard
+            title="24 new entities discovered today"
+            detail="12 people · 8 companies · 4 organizations"
+          />
+        </PageSection>
       </div>
-    </div>
+    </AppShell>
   )
 }
