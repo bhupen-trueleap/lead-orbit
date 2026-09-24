@@ -15,7 +15,6 @@ import { Route as EntitiesRouteImport } from './routes/entities'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as SavedSearchesRouteImport } from './routes/saved-searches'
 import { Route as SearchesRouteImport } from './routes/searches'
-import { Route as SettingsRouteImport } from './routes/settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,11 +46,6 @@ const SearchesRoute = SearchesRouteImport.update({
   path: '/searches',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,7 +54,6 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/searches': typeof SearchesRoute
-  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -69,7 +62,6 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/searches': typeof SearchesRoute
-  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,7 +71,6 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/searches': typeof SearchesRoute
-  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,7 +81,6 @@ export interface FileRouteTypes {
     | '/history'
     | '/saved-searches'
     | '/searches'
-    | '/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -99,7 +89,6 @@ export interface FileRouteTypes {
     | '/history'
     | '/saved-searches'
     | '/searches'
-    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -108,7 +97,6 @@ export interface FileRouteTypes {
     | '/history'
     | '/saved-searches'
     | '/searches'
-    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,7 +106,6 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   SavedSearchesRoute: typeof SavedSearchesRoute
   SearchesRoute: typeof SearchesRoute
-  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,13 +152,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -182,7 +162,6 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   SavedSearchesRoute: SavedSearchesRoute,
   SearchesRoute: SearchesRoute,
-  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

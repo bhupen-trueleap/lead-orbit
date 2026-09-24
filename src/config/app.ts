@@ -11,7 +11,6 @@ import type { LucideIcon } from 'lucide-react'
 
 export const appConfig = {
   name: 'LeadOrbit',
-  userName: 'Bhupen',
 }
 
 export interface NavItem {

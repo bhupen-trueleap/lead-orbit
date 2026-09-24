@@ -1,8 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import { Plus, Settings } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import type { NavItem } from '@/config/app'
 
 interface AppSidebarProps {
@@ -35,11 +34,6 @@ export function AppSidebar({ items }: AppSidebarProps) {
           </Link>
         ))}
       </nav>
-      <Separator className="my-4" />
-      <Link to="/settings" activeProps={activeClass} className={linkClass}>
-        <Settings />
-        Settings
-      </Link>
     </aside>
   )
 }
