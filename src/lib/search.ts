@@ -2,9 +2,9 @@ export const MAX_QUERY_LENGTH = 500
 
 export type SearchCategory = 'people' | 'company'
 
-export type SearchLimit = 10 | 25 | 50
+export type SearchLimit = 10 | 25 | 50 | 100
 
-export const SEARCH_LIMITS: ReadonlyArray<SearchLimit> = [10, 25, 50]
+export const SEARCH_LIMITS: ReadonlyArray<SearchLimit> = [10, 25, 50, 100]
 
 export const DEFAULT_SEARCH_LIMIT: SearchLimit = 10
 
@@ -57,7 +57,7 @@ export function parseSearchRequest(body: unknown): SearchRequest | null {
   return { query, category: body.category, limit }
 }
 
-function isSearchEntity(value: unknown): value is SearchEntity {
+export function isSearchEntity(value: unknown): value is SearchEntity {
   return (
     isRecord(value) &&
     typeof value.id === 'string' &&
