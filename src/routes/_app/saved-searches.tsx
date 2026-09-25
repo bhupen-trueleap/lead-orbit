@@ -1,12 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
-import { AppShell } from '@/components/layout/app-shell'
 import { SavedSearchesTable } from '@/components/search/saved-searches-table'
 import { deleteSavedSearch, listSavedSearches } from '@/lib/saved-searches'
 import type { SavedSearch } from '@/lib/saved-searches'
 
-export const Route = createFileRoute('/saved-searches')({
+export const Route = createFileRoute('/_app/saved-searches')({
   component: SavedSearches,
 })
 
@@ -48,24 +47,21 @@ function SavedSearches() {
   }
 
   return (
-    <AppShell>
-      <div className="mx-auto max-w-4xl space-y-6">
-        <h1 className="text-2xl font-semibold">Saved Searches</h1>
-        <div aria-live="polite" className="text-sm text-muted-foreground">
-          {state === 'loading' ? 'Loading…' : null}
-          {state === 'error' ? 'Could not load saved searches.' : null}
-          {state === 'ready' && savedSearches.length === 0
-            ? 'No saved searches yet. Save a search from the Searches page.'
-            : null}
-          {message}
-        </div>
-        {savedSearches.length > 0 ? (
-          <SavedSearchesTable
-            savedSearches={savedSearches}
-            onDelete={(id) => void handleDelete(id)}
-          />
-        ) : null}
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div aria-live="polite" className="text-sm text-muted-foreground">
+        {state === 'loading' ? 'Loading…' : null}
+        {state === 'error' ? 'Could not load saved searches.' : null}
+        {state === 'ready' && savedSearches.length === 0
+          ? 'No saved searches yet. Save a search from the Searches page.'
+          : null}
+        {message}
       </div>
-    </AppShell>
+      {savedSearches.length > 0 ? (
+        <SavedSearchesTable
+          savedSearches={savedSearches}
+          onDelete={(id) => void handleDelete(id)}
+        />
+      ) : null}
+    </div>
   )
 }

@@ -1,39 +1,65 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
 
-import { buttonVariants } from '@/components/ui/button'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from '@/components/ui/sidebar'
 import type { NavItem } from '@/config/app'
 
 interface AppSidebarProps {
   items: Array<NavItem>
 }
 
-const linkClass = buttonVariants({ variant: 'ghost' }) + ' justify-start'
-const activeClass = {
-  className: 'bg-primary/15 font-medium text-foreground hover:bg-primary/20',
-}
+const iconClass = '[&_svg]:size-5'
+
+const activeClass = `${iconClass} data-active:bg-primary/15 data-active:text-foreground hover:bg-primary/20`
 
 export function AppSidebar({ items }: AppSidebarProps) {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r p-4 md:flex">
-      <Link to="/searches" className={buttonVariants() + ' mb-4 justify-start'}>
-        <Plus />
-        New Search
-      </Link>
-      <nav aria-label="Primary" className="flex flex-col gap-1">
-        {items.map(({ label, to, icon: Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            activeOptions={{ exact: true }}
-            activeProps={activeClass}
-            className={linkClass}
-          >
-            <Icon />
-            {label}
-          </Link>
-        ))}
-      </nav>
-    </aside>
+    <Sidebar collapsible="icon" className="top-14 h-[calc(100svh-3.5rem)]">
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="New Search"
+                  render={<Link to="/searches" />}
+                  className={`${iconClass} mb-2 bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground`}
+                >
+                  <Plus />
+                  <span>New Search</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {items.map(({ label, to, icon: Icon }) => (
+                <SidebarMenuItem key={to}>
+                  <SidebarMenuButton
+                    tooltip={label}
+                    isActive={pathname === to}
+                    render={<Link to={to} />}
+                    className={activeClass}
+                  >
+                    <Icon />
+                    <span>{label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
   )
 }

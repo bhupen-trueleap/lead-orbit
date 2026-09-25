@@ -1,5 +1,4 @@
 import {
-  Clock,
   FolderOpen,
   History,
   LayoutDashboard,
@@ -24,6 +23,5 @@ export const navItems: Array<NavItem> = [
   { label: 'Searches', to: '/searches', icon: Search },
   { label: 'Entities', to: '/entities', icon: Users },
   { label: 'Collections', to: '/collections', icon: FolderOpen },
-  { label: 'Saved Searches', to: '/saved-searches', icon: Clock },
   { label: 'History', to: '/history', icon: History },
 ]
