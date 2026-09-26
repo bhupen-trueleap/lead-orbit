@@ -13,7 +13,6 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppCollectionsRouteImport } from './routes/_app/collections'
 import { Route as AppEntitiesRouteImport } from './routes/_app/entities'
-import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as AppSavedSearchesRouteImport } from './routes/_app/saved-searches'
 import { Route as AppSearchesRouteImport } from './routes/_app/searches'
 import { Route as ApiEntitiesRouteImport } from './routes/api/entities'
@@ -37,11 +36,6 @@ const AppCollectionsRoute = AppCollectionsRouteImport.update({
 const AppEntitiesRoute = AppEntitiesRouteImport.update({
   id: '/entities',
   path: '/entities',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppHistoryRoute = AppHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSavedSearchesRoute = AppSavedSearchesRouteImport.update({
@@ -74,7 +68,6 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/collections': typeof AppCollectionsRoute
   '/entities': typeof AppEntitiesRoute
-  '/history': typeof AppHistoryRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
   '/api/entities': typeof ApiEntitiesRoute
@@ -84,7 +77,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/collections': typeof AppCollectionsRoute
   '/entities': typeof AppEntitiesRoute
-  '/history': typeof AppHistoryRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
   '/api/entities': typeof ApiEntitiesRoute
@@ -97,7 +89,6 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/collections': typeof AppCollectionsRoute
   '/_app/entities': typeof AppEntitiesRoute
-  '/_app/history': typeof AppHistoryRoute
   '/_app/saved-searches': typeof AppSavedSearchesRoute
   '/_app/searches': typeof AppSearchesRoute
   '/api/entities': typeof ApiEntitiesRoute
@@ -111,7 +102,6 @@ export interface FileRouteTypes {
     | '/'
     | '/collections'
     | '/entities'
-    | '/history'
     | '/saved-searches'
     | '/searches'
     | '/api/entities'
@@ -121,7 +111,6 @@ export interface FileRouteTypes {
   to:
     | '/collections'
     | '/entities'
-    | '/history'
     | '/saved-searches'
     | '/searches'
     | '/api/entities'
@@ -133,7 +122,6 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_app/collections'
     | '/_app/entities'
-    | '/_app/history'
     | '/_app/saved-searches'
     | '/_app/searches'
     | '/api/entities'
@@ -179,13 +167,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEntitiesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/history': {
-      id: '/_app/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof AppHistoryRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/saved-searches': {
       id: '/_app/saved-searches'
       path: '/saved-searches'
@@ -227,7 +208,6 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppCollectionsRoute: typeof AppCollectionsRoute
   AppEntitiesRoute: typeof AppEntitiesRoute
-  AppHistoryRoute: typeof AppHistoryRoute
   AppSavedSearchesRoute: typeof AppSavedSearchesRoute
   AppSearchesRoute: typeof AppSearchesRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -236,7 +216,6 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppCollectionsRoute: AppCollectionsRoute,
   AppEntitiesRoute: AppEntitiesRoute,
-  AppHistoryRoute: AppHistoryRoute,
   AppSavedSearchesRoute: AppSavedSearchesRoute,
   AppSearchesRoute: AppSearchesRoute,
   AppIndexRoute: AppIndexRoute,

@@ -1,8 +1,10 @@
-import { Search } from 'lucide-react'
-import { useState } from 'react'
+import { Search, Sparkles } from 'lucide-react'
+import { useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { examplePrompts } from '@/config/app'
+import type { ExamplePrompt } from '@/config/app'
 import {
   DEFAULT_SEARCH_LIMIT,
   MAX_QUERY_LENGTH,
@@ -38,6 +40,15 @@ export function SearchBox({
   )
 
   const [limit, setLimit] = useState<SearchLimit>(defaultLimit)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  function applyExample(example: ExamplePrompt) {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.value = example.query
+    textarea.focus()
+    setCategory(example.category)
+  }
 
   function handleSubmit(event: React.SyntheticEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -58,6 +69,7 @@ export function SearchBox({
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="relative">
         <Textarea
+          ref={textareaRef}
           name="query"
           rows={3}
           maxLength={MAX_QUERY_LENGTH}
@@ -114,6 +126,24 @@ export function SearchBox({
             >
               {value}
             </Button>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Sparkles className="size-3.5" />
+          Try an example
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {examplePrompts.map((example) => (
+            <button
+              key={example.query}
+              type="button"
+              onClick={() => applyExample(example)}
+              className="rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+            >
+              {example.query}
+            </button>
           ))}
         </div>
       </div>

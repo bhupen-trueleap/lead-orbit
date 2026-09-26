@@ -1,10 +1,4 @@
-import {
-  FolderOpen,
-  History,
-  LayoutDashboard,
-  Search,
-  Users,
-} from 'lucide-react'
+import { Clock, FolderOpen, LayoutDashboard, Search, Users } from 'lucide-react'
 import type { LinkProps } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
 
@@ -23,5 +17,18 @@ export const navItems: Array<NavItem> = [
   { label: 'Searches', to: '/searches', icon: Search },
   { label: 'Entities', to: '/entities', icon: Users },
   { label: 'Collections', to: '/collections', icon: FolderOpen },
-  { label: 'History', to: '/history', icon: History },
+  { label: 'Saved Searches', to: '/saved-searches', icon: Clock },
+]
+
+export interface ExamplePrompt {
+  query: string
+  category?: 'people' | 'company'
+}
+
+export const examplePrompts: Array<ExamplePrompt> = [
+  { query: 'AI founders in India', category: 'people' },
+  { query: 'Community builders in Houston', category: 'people' },
+  { query: 'Series A fintech startups in Southeast Asia', category: 'company' },
+  { query: 'Climate tech companies hiring engineers', category: 'company' },
+  { query: 'Developer tools launched this year' },
 ]
