@@ -1,6 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { DEFAULT_PAGE_SIZE, isPage, isPageSize } from '@/lib/entities'
+import {
+  DEFAULT_PAGE_SIZE,
+  MAX_ENTITY_QUERY_LENGTH,
+  isPage,
+  isPageSize,
+  parseEntityFilters,
+} from '@/lib/entities'
 import { getRequestEmail } from '@/server/auth'
 import { listEntities } from '@/server/entities'
 
@@ -18,8 +24,12 @@ export const Route = createFileRoute('/api/entities')({
         if (!isPage(page) || !isPageSize(pageSize)) {
           return new Response('Invalid request', { status: 400 })
         }
+        if ((params.get('q') ?? '').length > MAX_ENTITY_QUERY_LENGTH) {
+          return new Response('Invalid request', { status: 400 })
+        }
 
-        return Response.json(await listEntities(page, pageSize), {
+        const filters = parseEntityFilters(Object.fromEntries(params))
+        return Response.json(await listEntities(page, pageSize, filters), {
           headers: { 'cache-control': 'no-store' },
         })
       },
