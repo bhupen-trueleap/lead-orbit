@@ -21,6 +21,8 @@ export interface SearchEntity {
   name: string
   url: string | null
   type: string
+  role: string | null
+  location: string | null
   highlight: string | null
   source: SearchSource
 }
@@ -64,6 +66,8 @@ export function isSearchEntity(value: unknown): value is SearchEntity {
     typeof value.name === 'string' &&
     (typeof value.url === 'string' || value.url === null) &&
     typeof value.type === 'string' &&
+    (typeof value.role === 'string' || value.role === null) &&
+    (typeof value.location === 'string' || value.location === null) &&
     (typeof value.highlight === 'string' || value.highlight === null) &&
     (value.source === 'database' || value.source === 'exa')
   )

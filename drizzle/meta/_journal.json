@@ -22,6 +22,20 @@
       "when": 1790259599102,
       "tag": "0002_saved_searches_options",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790406956235,
+      "tag": "0003_exa_structured_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790406976121,
+      "tag": "0004_backfill_web_pages",
+      "breakpoints": true
     }
   ]
 }

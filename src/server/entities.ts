@@ -14,8 +14,9 @@ import {
 import type { SQL } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { entities, entityAttributes } from '@/db/schema'
+import { companies, entities, people } from '@/db/schema'
 import type { EntitiesPage, EntityFilters, PageSize } from '@/lib/entities'
+import { entityRowFields, toSearchEntity } from '@/server/entity-rows'
 
 const LINKEDIN_URL = '%linkedin.com/%'
 
@@ -44,7 +45,12 @@ function buildWhere({
       or(
         ilike(entities.name, pattern),
         ilike(entities.url, pattern),
-        ilike(entityAttributes.value, pattern),
+        ilike(entities.description, pattern),
+        ilike(people.currentTitle, pattern),
+        ilike(people.currentCompanyName, pattern),
+        ilike(people.location, pattern),
+        ilike(companies.hqCity, pattern),
+        ilike(companies.hqCountry, pattern),
       ),
     )
   }
@@ -62,11 +68,6 @@ function buildWhere({
   return and(...conditions)
 }
 
-const highlightJoin = and(
-  eq(entityAttributes.entityId, entities.id),
-  eq(entityAttributes.key, 'highlight'),
-)
-
 export async function listEntities(
   page: number,
   pageSize: PageSize,
@@ -80,15 +81,10 @@ export async function listEntities(
 
   const [rows, totals, types] = await Promise.all([
     db
-      .select({
-        id: entities.id,
-        name: entities.name,
-        url: entities.url,
-        type: entities.type,
-        highlight: entityAttributes.value,
-      })
+      .select(entityRowFields)
       .from(entities)
-      .leftJoin(entityAttributes, highlightJoin)
+      .leftJoin(people, eq(people.entityId, entities.id))
+      .leftJoin(companies, eq(companies.entityId, entities.id))
       .where(where)
       .orderBy(...orderBy)
       .limit(pageSize)
@@ -96,7 +92,8 @@ export async function listEntities(
     db
       .select({ total: count() })
       .from(entities)
-      .leftJoin(entityAttributes, highlightJoin)
+      .leftJoin(people, eq(people.entityId, entities.id))
+      .leftJoin(companies, eq(companies.entityId, entities.id))
       .where(where),
     db
       .select({ type: entities.type, count: count() })
@@ -106,7 +103,7 @@ export async function listEntities(
   ])
 
   return {
-    entities: rows.map((row) => ({ ...row, source: 'database' })),
+    entities: rows.map((row) => toSearchEntity(row, 'database')),
     total: totals.at(0)?.total ?? 0,
     types,
   }

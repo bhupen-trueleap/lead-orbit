@@ -1,4 +1,12 @@
-import { AlignLeft, Globe, Link, Tag, Zap } from 'lucide-react'
+import {
+  AlignLeft,
+  Briefcase,
+  Globe,
+  Link,
+  MapPin,
+  Tag,
+  Zap,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 import { Skeleton } from '@/components/ui/skeleton'
@@ -16,6 +24,8 @@ const typeLabels: Record<string, string> = {
   person: 'Person',
   company: 'Company',
   organization: 'Organization',
+  publication: 'Publication',
+  page: 'Page',
 }
 
 const cellClass = 'border-r border-b'
@@ -62,6 +72,12 @@ function SkeletonRows({ showSource }: { showSource: boolean }) {
         <Skeleton className="h-4 w-16 motion-reduce:animate-none" />
       </TableCell>
       <TableCell className={cellClass}>
+        <Skeleton className="h-4 w-36 motion-reduce:animate-none" />
+      </TableCell>
+      <TableCell className={cellClass}>
+        <Skeleton className="h-4 w-28 motion-reduce:animate-none" />
+      </TableCell>
+      <TableCell className={cellClass}>
         <Skeleton className="h-4 w-full motion-reduce:animate-none" />
       </TableCell>
       <TableCell className={showSource ? cellClass : 'border-b'}>
@@ -103,6 +119,12 @@ export function EntityTable({
             <ColumnHeader icon={Tag} className="w-32">
               Type
             </ColumnHeader>
+            <ColumnHeader icon={Briefcase} className="min-w-56">
+              Role
+            </ColumnHeader>
+            <ColumnHeader icon={MapPin} className="min-w-44">
+              Location
+            </ColumnHeader>
             <ColumnHeader icon={Zap} className="min-w-72">
               Details
             </ColumnHeader>
@@ -121,52 +143,67 @@ export function EntityTable({
         </TableHeader>
         <TableBody>
           {showSkeleton ? <SkeletonRows showSource={showSource} /> : null}
-          {entities.map(({ id, name, type, url, highlight, source }, index) => {
-            const href = safeHref(url)
-            return (
-              <TableRow key={id} className="h-14">
-                <TableCell
-                  className={`${cellClass} text-right text-muted-foreground`}
-                >
-                  {startIndex + index + 1}
-                </TableCell>
-                <TableCell
-                  className={`${cellClass} max-w-64 truncate font-medium`}
-                >
-                  {name}
-                </TableCell>
-                <TableCell className={cellClass}>
-                  {typeLabels[type] ?? '—'}
-                </TableCell>
-                <TableCell
-                  className={`${cellClass} max-w-md whitespace-normal text-muted-foreground`}
-                >
-                  <p className="line-clamp-2">{highlight ?? '—'}</p>
-                </TableCell>
-                <TableCell
-                  className={`${showSource ? cellClass : 'border-b'} max-w-52`}
-                >
-                  {href ? (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block truncate underline underline-offset-4"
-                    >
-                      {url}
-                    </a>
-                  ) : (
-                    '—'
-                  )}
-                </TableCell>
-                {showSource ? (
-                  <TableCell className="border-b text-muted-foreground">
-                    {source === 'exa' ? 'Web' : 'Saved'}
+          {entities.map(
+            (
+              { id, name, type, url, role, location, highlight, source },
+              index,
+            ) => {
+              const href = safeHref(url)
+              return (
+                <TableRow key={id} className="h-14">
+                  <TableCell
+                    className={`${cellClass} text-right text-muted-foreground`}
+                  >
+                    {startIndex + index + 1}
                   </TableCell>
-                ) : null}
-              </TableRow>
-            )
-          })}
+                  <TableCell
+                    className={`${cellClass} max-w-64 truncate font-medium`}
+                  >
+                    {name}
+                  </TableCell>
+                  <TableCell className={cellClass}>
+                    {typeLabels[type] ?? '—'}
+                  </TableCell>
+                  <TableCell
+                    className={`${cellClass} max-w-64 whitespace-normal`}
+                  >
+                    <p className="line-clamp-2">{role ?? '—'}</p>
+                  </TableCell>
+                  <TableCell
+                    className={`${cellClass} max-w-52 truncate text-muted-foreground`}
+                  >
+                    {location ?? '—'}
+                  </TableCell>
+                  <TableCell
+                    className={`${cellClass} max-w-md whitespace-normal text-muted-foreground`}
+                  >
+                    <p className="line-clamp-2">{highlight ?? '—'}</p>
+                  </TableCell>
+                  <TableCell
+                    className={`${showSource ? cellClass : 'border-b'} max-w-52`}
+                  >
+                    {href ? (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block truncate underline underline-offset-4"
+                      >
+                        {url}
+                      </a>
+                    ) : (
+                      '—'
+                    )}
+                  </TableCell>
+                  {showSource ? (
+                    <TableCell className="border-b text-muted-foreground">
+                      {source === 'exa' ? 'Web' : 'Saved'}
+                    </TableCell>
+                  ) : null}
+                </TableRow>
+              )
+            },
+          )}
         </TableBody>
       </Table>
     </div>
