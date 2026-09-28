@@ -1,3 +1,5 @@
+import { isRecord } from '@/lib/guards'
+
 const EXA_SEARCH_URL = 'https://api.exa.ai/search'
 const REQUEST_TIMEOUT_MS = 20_000
 const TEXT_MAX_CHARACTERS = 2_000
@@ -24,23 +26,10 @@ export interface ExaResult {
   entities: Array<ExaEntity>
 }
 
-export interface ExaSearchResponse {
-  request: Record<string, unknown>
-  requestId: string | null
-  resolvedSearchType: string | null
-  costDollars: number | null
-  searchTimeMs: number | null
-  results: Array<ExaResult>
-}
-
 interface ExaSearchOptions {
   query: string
   category?: ExaCategory
   numResults: number
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 export function stringOrNull(value: unknown): string | null {
@@ -93,7 +82,7 @@ export async function searchExa({
   query,
   category,
   numResults,
-}: ExaSearchOptions): Promise<ExaSearchResponse> {
+}: ExaSearchOptions): Promise<Array<ExaResult>> {
   const apiKey = process.env.EXA_API_KEY
 
   if (!apiKey) {
@@ -128,17 +117,8 @@ export async function searchExa({
     throw new Error('Unexpected Exa response shape')
   }
 
-  return {
-    request,
-    requestId: stringOrNull(data.requestId),
-    resolvedSearchType: stringOrNull(data.resolvedSearchType),
-    costDollars: isRecord(data.costDollars)
-      ? numberOrNull(data.costDollars.total)
-      : null,
-    searchTimeMs: numberOrNull(data.searchTime),
-    results: data.results.flatMap((raw: unknown) => {
-      const result = parseResult(raw)
-      return result ? [result] : []
-    }),
-  }
+  return data.results.flatMap((raw: unknown) => {
+    const result = parseResult(raw)
+    return result ? [result] : []
+  })
 }

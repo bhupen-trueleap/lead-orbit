@@ -1,16 +1,16 @@
-import { isSearchCategory } from '@/lib/search'
+import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
+import { isResultCount } from '@/lib/pagination'
+import type { ResultCount } from '@/lib/pagination'
 import type { SearchCategory } from '@/lib/search'
+import { isRecord } from '@/lib/guards'
 
 export interface RecentSearch {
   id: string
   query: string
   category: SearchCategory | null
+  limit: ResultCount
   results: number
   createdAt: string
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 function parseRecentSearch(value: unknown): RecentSearch | null {
@@ -27,6 +27,7 @@ function parseRecentSearch(value: unknown): RecentSearch | null {
     id: value.id,
     query: value.query,
     category: isSearchCategory(value.category) ? value.category : null,
+    limit: isResultCount(value.limit) ? value.limit : DEFAULT_SEARCH_LIMIT,
     results: value.results,
     createdAt: value.createdAt,
   }

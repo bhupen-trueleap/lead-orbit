@@ -1,4 +1,5 @@
-import { isRecord, numberOrNull, stringOrNull } from '@/server/exa'
+import { isRecord } from '@/lib/guards'
+import { numberOrNull, stringOrNull } from '@/server/exa'
 
 export interface PersonDetails {
   firstName: string | null

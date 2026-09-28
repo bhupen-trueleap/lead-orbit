@@ -1,19 +1,19 @@
+import { isResultCount } from '@/lib/pagination'
+import type { ResultCount } from '@/lib/pagination'
+import { isRecord } from '@/lib/guards'
+
 export const MAX_QUERY_LENGTH = 500
 
 export type SearchCategory = 'people' | 'company'
 
-export type SearchLimit = 10 | 25 | 50 | 100
-
-export const SEARCH_LIMITS: ReadonlyArray<SearchLimit> = [10, 25, 50, 100]
-
-export const DEFAULT_SEARCH_LIMIT: SearchLimit = 10
+export const DEFAULT_SEARCH_LIMIT: ResultCount = 10
 
 export type SearchSource = 'database' | 'exa'
 
 export interface SearchRequest {
   query: string
   category?: SearchCategory
-  limit: SearchLimit
+  limit: ResultCount
 }
 
 export interface SearchEntity {
@@ -32,16 +32,8 @@ export type SearchEvent =
   | { type: 'done'; searchId: string; count: number }
   | { type: 'error'; message: string }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
 export function isSearchCategory(value: unknown): value is SearchCategory {
   return value === 'people' || value === 'company'
-}
-
-export function isSearchLimit(value: unknown): value is SearchLimit {
-  return SEARCH_LIMITS.some((limit) => limit === value)
 }
 
 export function parseSearchRequest(body: unknown): SearchRequest | null {
@@ -50,7 +42,7 @@ export function parseSearchRequest(body: unknown): SearchRequest | null {
   if (query === '' || query.length > MAX_QUERY_LENGTH) return null
 
   const limit = body.limit ?? DEFAULT_SEARCH_LIMIT
-  if (!isSearchLimit(limit)) return null
+  if (!isResultCount(limit)) return null
 
   if (body.category === undefined || body.category === null) {
     return { query, limit }

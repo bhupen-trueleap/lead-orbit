@@ -4,27 +4,23 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EntityFilters } from '@/components/search/entity-filters'
 import { EntityTable } from '@/components/search/entity-table'
 import { TablePagination } from '@/components/table-pagination'
+import { fetchEntities, parseEntityFilters } from '@/lib/entities'
 import {
+  RESULT_COUNTS,
   DEFAULT_PAGE_SIZE,
-  PAGE_SIZES,
-  fetchEntities,
+  isResultCount,
   isPage,
-  isPageSize,
-  parseEntityFilters,
-} from '@/lib/entities'
-import type {
-  EntitiesPage,
-  EntityFilters as Filters,
-  PageSize,
-} from '@/lib/entities'
+} from '@/lib/pagination'
+import type { ResultCount } from '@/lib/pagination'
+import type { EntitiesPage, EntityFilters as Filters } from '@/lib/entities'
 
 export const Route = createFileRoute('/_app/entities')({
   validateSearch: (
     search: Record<string, unknown>,
-  ): Filters & { page?: number; pageSize?: PageSize } => ({
+  ): Filters & { page?: number; pageSize?: ResultCount } => ({
     ...parseEntityFilters(search),
     ...(isPage(search.page) ? { page: search.page } : {}),
-    ...(isPageSize(search.pageSize) ? { pageSize: search.pageSize } : {}),
+    ...(isResultCount(search.pageSize) ? { pageSize: search.pageSize } : {}),
   }),
   component: Entities,
 })
@@ -114,7 +110,7 @@ function Entities() {
         <TablePagination
           page={page}
           pageSize={pageSize}
-          pageSizes={PAGE_SIZES}
+          pageSizes={RESULT_COUNTS}
           total={total}
           onPageChange={(next) =>
             void navigate({ search: (prev) => ({ ...prev, page: next }) })

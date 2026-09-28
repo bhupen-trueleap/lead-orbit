@@ -36,6 +36,20 @@
       "when": 1790406976121,
       "tag": "0004_backfill_web_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790572438570,
+      "tag": "0005_drop_exa_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790573047903,
+      "tag": "0006_searches_result_limit",
+      "breakpoints": true
     }
   ]
 }

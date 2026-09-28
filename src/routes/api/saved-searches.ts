@@ -1,6 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { parseDeleteRequest } from '@/lib/saved-searches'
+import {
+  MAX_SAVED_QUERY_LENGTH,
+  parseDeleteRequest,
+  parseSavedSearchFilters,
+} from '@/lib/saved-searches'
 import { parseSearchRequest } from '@/lib/search'
 import { getRequestEmail } from '@/server/auth'
 import {
@@ -8,6 +12,7 @@ import {
   listSavedSearches,
   saveSearch,
 } from '@/server/saved-searches'
+import { DEFAULT_PAGE_SIZE, isResultCount, isPage } from '@/lib/pagination'
 
 export const Route = createFileRoute('/api/saved-searches')({
   server: {
@@ -16,9 +21,20 @@ export const Route = createFileRoute('/api/saved-searches')({
         const email = getRequestEmail(request)
         if (!email) return new Response('Unauthorized', { status: 401 })
 
-        const savedSearches = await listSavedSearches(email)
+        const params = new URL(request.url).searchParams
+        const page = Number(params.get('page') ?? 1)
+        const pageSize = Number(params.get('pageSize') ?? DEFAULT_PAGE_SIZE)
+        if (
+          !isPage(page) ||
+          !isResultCount(pageSize) ||
+          (params.get('q') ?? '').length > MAX_SAVED_QUERY_LENGTH
+        ) {
+          return new Response('Invalid request', { status: 400 })
+        }
+
+        const filters = parseSavedSearchFilters(Object.fromEntries(params))
         return Response.json(
-          { savedSearches },
+          await listSavedSearches(email, page, pageSize, filters),
           { headers: { 'cache-control': 'no-store' } },
         )
       },

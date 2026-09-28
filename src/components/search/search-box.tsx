@@ -5,18 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { examplePrompts } from '@/config/app'
 import type { ExamplePrompt } from '@/config/app'
-import {
-  DEFAULT_SEARCH_LIMIT,
-  MAX_QUERY_LENGTH,
-  SEARCH_LIMITS,
-} from '@/lib/search'
-import type { SearchCategory, SearchLimit, SearchRequest } from '@/lib/search'
+import { DEFAULT_SEARCH_LIMIT, MAX_QUERY_LENGTH } from '@/lib/search'
+import type { SearchCategory, SearchRequest } from '@/lib/search'
+import { RESULT_COUNTS } from '@/lib/pagination'
+import type { ResultCount } from '@/lib/pagination'
 
 interface SearchBoxProps {
   placeholder?: string
   defaultQuery?: string
   defaultCategory?: SearchCategory
-  defaultLimit?: SearchLimit
+  defaultLimit?: ResultCount
   isSearching?: boolean
   onSearch: (request: SearchRequest) => void
 }
@@ -39,7 +37,7 @@ export function SearchBox({
     defaultCategory,
   )
 
-  const [limit, setLimit] = useState<SearchLimit>(defaultLimit)
+  const [limit, setLimit] = useState<ResultCount>(defaultLimit)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   function applyExample(example: ExamplePrompt) {
@@ -111,10 +109,14 @@ export function SearchBox({
         </div>
         <div
           role="radiogroup"
-          aria-label="Number of results"
+          aria-label="Results per source: stored and web"
+          title="Up to this many from your database, plus up to this many new from the web"
           className="flex items-center gap-2"
         >
-          {SEARCH_LIMITS.map((value) => (
+          <span aria-hidden="true" className="text-xs text-muted-foreground">
+            Per source
+          </span>
+          {RESULT_COUNTS.map((value) => (
             <Button
               key={value}
               type="button"

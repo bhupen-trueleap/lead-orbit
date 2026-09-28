@@ -15,14 +15,12 @@ import type { SQL } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { companies, entities, people } from '@/db/schema'
-import type { EntitiesPage, EntityFilters, PageSize } from '@/lib/entities'
+import type { EntitiesPage, EntityFilters } from '@/lib/entities'
 import { entityRowFields, toSearchEntity } from '@/server/entity-rows'
+import { escapeLike } from '@/server/sql'
+import type { ResultCount } from '@/lib/pagination'
 
 const LINKEDIN_URL = '%linkedin.com/%'
-
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, '\\$&')
-}
 
 function startOfDay(date: string, offsetDays = 0): Date {
   const value = new Date(`${date}T00:00:00Z`)
@@ -70,7 +68,7 @@ function buildWhere({
 
 export async function listEntities(
   page: number,
-  pageSize: PageSize,
+  pageSize: ResultCount,
   filters: EntityFilters,
 ): Promise<EntitiesPage> {
   const where = buildWhere(filters)

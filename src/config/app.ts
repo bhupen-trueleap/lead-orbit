@@ -2,6 +2,8 @@ import { Clock, FolderOpen, LayoutDashboard, Search, Users } from 'lucide-react'
 import type { LinkProps } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
 
+import type { SearchCategory } from '@/lib/search'
+
 export const appConfig = {
   name: 'LeadOrbit',
 }
@@ -22,7 +24,7 @@ export const navItems: Array<NavItem> = [
 
 export interface ExamplePrompt {
   query: string
-  category?: 'people' | 'company'
+  category?: SearchCategory
 }
 
 export const examplePrompts: Array<ExamplePrompt> = [

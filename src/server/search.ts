@@ -1,11 +1,11 @@
 import { and, asc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
 
 import { db } from '@/db'
 import {
   companies,
   entities,
   entityPages,
-  exaRequests,
   people,
   positions,
   searchResults,
@@ -16,12 +16,12 @@ import type {
   SearchCategory,
   SearchEntity,
   SearchEvent,
-  SearchLimit,
   SearchSource,
 } from '@/lib/search'
 import { normalizeUrl } from '@/lib/url'
 import { searchExa } from '@/server/exa'
-import type { ExaEntity, ExaResult, ExaSearchResponse } from '@/server/exa'
+import { escapeLike } from '@/server/sql'
+import type { ExaEntity, ExaResult } from '@/server/exa'
 import {
   describePerson,
   mapCompany,
@@ -30,14 +30,22 @@ import {
 } from '@/server/exa-mappers'
 import { entityRowFields, toSearchEntity } from '@/server/entity-rows'
 import type { EntityRow } from '@/server/entity-rows'
+import type { ResultCount } from '@/lib/pagination'
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 interface SearchInput {
   query: string
   category?: SearchCategory
-  limit: SearchLimit
+  limit: ResultCount
   email: string
+}
+
+type RefKind = 'entity' | 'page'
+
+interface StoredRef {
+  kind: RefKind
+  id: string
 }
 
 interface ResultRow {
@@ -50,10 +58,6 @@ function entityTypeFor(category: SearchCategory | undefined): string | null {
   if (category === 'people') return 'person'
   if (category === 'company') return 'company'
   return null
-}
-
-function escapeLike(value: string): string {
-  return value.replace(/[\\%_]/g, '\\$&')
 }
 
 async function loadEntityRows(
@@ -89,9 +93,11 @@ function pageRow(
 async function findStoredResults(
   query: string,
   category: SearchCategory | undefined,
-  limit: SearchLimit,
+  limit: ResultCount,
 ): Promise<Array<ResultRow>> {
   const type = entityTypeFor(category)
+  const tsQuery = sql`websearch_to_tsquery('english', ${query})`
+  const queryTerms = sql`strip(to_tsvector('english', ${query}))`
 
   const previous = await db
     .select({
@@ -103,7 +109,13 @@ async function findStoredResults(
     .leftJoin(entities, eq(entities.id, searchResults.entityId))
     .where(
       and(
-        sql`lower(${searches.query}) = ${query.toLowerCase()}`,
+        or(
+          sql`lower(${searches.query}) = ${query.toLowerCase()}`,
+          and(
+            sql`length(${queryTerms}) > 0`,
+            sql`strip(to_tsvector('english', ${searches.query})) = ${queryTerms}`,
+          ),
+        ),
         category ? eq(searches.category, category) : isNull(searches.category),
         type ? eq(entities.type, type) : undefined,
       ),
@@ -122,39 +134,112 @@ async function findStoredResults(
     )
     .limit(limit)
 
-  const entityIds = [
-    ...new Set([
-      ...previous.flatMap((row) => (row.entityId ? [row.entityId] : [])),
-      ...byName.map((row) => row.id),
-    ]),
+  const textMatches = async (textQuery: SQL) => {
+    const entityRelevance = sql<number>`max(
+      ts_rank(${entities.searchVector}, ${textQuery})
+      + coalesce(ts_rank(${webPages.searchVector}, ${textQuery}), 0)
+    )`
+    const entityMatches = await db
+      .select({ id: entities.id, relevance: entityRelevance })
+      .from(entities)
+      .leftJoin(entityPages, eq(entityPages.entityId, entities.id))
+      .leftJoin(webPages, eq(webPages.id, entityPages.pageId))
+      .where(
+        and(
+          or(
+            sql`${entities.searchVector} @@ ${textQuery}`,
+            sql`${webPages.searchVector} @@ ${textQuery}`,
+          ),
+          type ? eq(entities.type, type) : undefined,
+        ),
+      )
+      .groupBy(entities.id)
+      .orderBy(sql`${entityRelevance} desc`)
+      .limit(limit)
+
+    const pageRelevance = sql<number>`ts_rank(${webPages.searchVector}, ${textQuery})`
+    const pageMatches = category
+      ? []
+      : await db
+          .select({ id: webPages.id, relevance: pageRelevance })
+          .from(webPages)
+          .where(
+            and(
+              sql`${webPages.searchVector} @@ ${textQuery}`,
+              sql`not exists (select 1 from ${entityPages} where ${entityPages.pageId} = ${webPages.id})`,
+            ),
+          )
+          .orderBy(sql`${pageRelevance} desc`)
+          .limit(limit)
+
+    const matches: Array<StoredRef & { relevance: number }> = [
+      ...entityMatches.map((row): StoredRef & { relevance: number } => ({
+        kind: 'entity',
+        ...row,
+      })),
+      ...pageMatches.map((row): StoredRef & { relevance: number } => ({
+        kind: 'page',
+        ...row,
+      })),
+    ]
+    return matches.sort((left, right) => right.relevance - left.relevance)
+  }
+
+  let byText = await textMatches(tsQuery)
+  if (byText.length > 0 && byText.length < limit) {
+    const anyWord = sql`replace(${tsQuery}::text, ' & ', ' | ')::tsquery`
+    const seenIds = new Set(byText.map((row) => row.id))
+    byText = [
+      ...byText,
+      ...(await textMatches(anyWord)).filter((row) => !seenIds.has(row.id)),
+    ]
+  }
+  byText = byText.slice(0, limit)
+
+  const refs: Array<StoredRef> = [
+    ...previous.flatMap((row): Array<StoredRef> => {
+      if (row.entityId) return [{ kind: 'entity', id: row.entityId }]
+      return row.pageId ? [{ kind: 'page', id: row.pageId }] : []
+    }),
+    ...byName.map((row): StoredRef => ({ kind: 'entity', id: row.id })),
+    ...byText,
   ]
-  const pageIds = [
-    ...new Set(
-      previous.flatMap((row) =>
-        !row.entityId && row.pageId ? [row.pageId] : [],
-      ),
-    ),
-  ]
+
+  const ordered: Array<StoredRef> = []
+  const seenRefs = new Set<string>()
+  for (const ref of refs) {
+    const key = `${ref.kind}:${ref.id}`
+    if (seenRefs.has(key)) continue
+    seenRefs.add(key)
+    ordered.push(ref)
+    if (ordered.length === limit) break
+  }
+
+  const entityIds = ordered.flatMap((ref) =>
+    ref.kind === 'entity' ? [ref.id] : [],
+  )
+  const pageIds = ordered.flatMap((ref) =>
+    ref.kind === 'page' ? [ref.id] : [],
+  )
 
   const entityRows = await loadEntityRows(entityIds, 'database')
-  const pages =
-    pageIds.length > 0
+  const pages = new Map(
+    (pageIds.length > 0
       ? await db.select().from(webPages).where(inArray(webPages.id, pageIds))
       : []
+    ).map((page) => [page.id, page]),
+  )
 
-  const results: Array<ResultRow> = []
-  for (const id of entityIds) {
-    const entity = entityRows.get(id)
-    if (entity) results.push({ entity, entityId: id, pageId: null })
-  }
-  for (const page of pages) {
-    results.push({
-      entity: pageRow(page, 'database'),
-      entityId: null,
-      pageId: page.id,
-    })
-  }
-  return results.slice(0, limit)
+  return ordered.flatMap((ref): Array<ResultRow> => {
+    if (ref.kind === 'entity') {
+      const entity = entityRows.get(ref.id)
+      return entity ? [{ entity, entityId: ref.id, pageId: null }] : []
+    }
+    const page = pages.get(ref.id)
+    return page
+      ? [{ entity: pageRow(page, 'database'), entityId: null, pageId: page.id }]
+      : []
+  })
 }
 
 async function upsertPage(
@@ -329,26 +414,15 @@ async function upsertEntity(
   return entityId
 }
 
-async function storeExaResponse(
-  searchId: string,
-  response: ExaSearchResponse,
+async function storeExaResults(
+  results: Array<ExaResult>,
 ): Promise<Array<ResultRow>> {
   const stored = await db.transaction(async (tx) => {
-    await tx.insert(exaRequests).values({
-      searchId,
-      exaRequestId: response.requestId,
-      request: response.request,
-      resolvedSearchType: response.resolvedSearchType,
-      costDollars: response.costDollars,
-      searchTimeMs: response.searchTimeMs,
-      resultCount: response.results.length,
-    })
-
     const rows: Array<{
       entityId: string | null
       page: typeof webPages.$inferSelect
     }> = []
-    for (const result of response.results) {
+    for (const result of results) {
       const url = normalizeUrl(result.url)
       if (!url) continue
       const page = await upsertPage(tx, result, url)
@@ -386,7 +460,12 @@ export async function* runSearch({
   const search = (
     await db
       .insert(searches)
-      .values({ query, category: category ?? null, createdByEmail: email })
+      .values({
+        query,
+        category: category ?? null,
+        resultLimit: limit,
+        createdByEmail: email,
+      })
       .returning({ id: searches.id })
   ).at(0)
 
@@ -401,20 +480,18 @@ export async function* runSearch({
       yield { type: 'entity', entity: row.entity }
     }
 
-    if (stored.length < limit) {
-      try {
-        const response = await searchExa({ query, category, numResults: limit })
-        for (const row of await storeExaResponse(search.id, response)) {
-          if (seen.has(row.entity.id)) continue
-          seen.set(row.entity.id, row)
-          yield { type: 'entity', entity: row.entity }
-        }
-      } catch (error) {
-        console.error('Exa search failed', error)
-        yield {
-          type: 'error',
-          message: 'Fresh web discovery failed. Showing stored results only.',
-        }
+    try {
+      const results = await searchExa({ query, category, numResults: limit })
+      for (const row of await storeExaResults(results)) {
+        if (seen.has(row.entity.id)) continue
+        seen.set(row.entity.id, row)
+        yield { type: 'entity', entity: row.entity }
+      }
+    } catch (error) {
+      console.error('Exa search failed', error)
+      yield {
+        type: 'error',
+        message: 'Fresh web discovery failed. Showing stored results only.',
       }
     }
   } finally {

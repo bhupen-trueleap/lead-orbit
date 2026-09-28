@@ -2,7 +2,8 @@ import { count, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { searchResults, searches } from '@/db/schema'
-import { isSearchCategory } from '@/lib/search'
+import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
+import { isResultCount } from '@/lib/pagination'
 import type { RecentSearch } from '@/lib/recent-searches'
 
 const SCAN_LIMIT = 100
@@ -16,6 +17,7 @@ export async function listRecentSearches(
       id: searches.id,
       query: searches.query,
       category: searches.category,
+      resultLimit: searches.resultLimit,
       createdAt: searches.createdAt,
       results: count(searchResults.id),
     })
@@ -36,6 +38,9 @@ export async function listRecentSearches(
       id: row.id,
       query: row.query,
       category: isSearchCategory(row.category) ? row.category : null,
+      limit: isResultCount(row.resultLimit)
+        ? row.resultLimit
+        : DEFAULT_SEARCH_LIMIT,
       results: row.results,
       createdAt: row.createdAt.toISOString(),
     })

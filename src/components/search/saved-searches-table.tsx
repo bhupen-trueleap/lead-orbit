@@ -10,9 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { categoryLabels } from '@/lib/labels'
 import type { SavedSearch } from '@/lib/saved-searches'
-
-const categoryLabels = { people: 'People', company: 'Companies' }
 
 interface SavedSearchesTableProps {
   savedSearches: Array<SavedSearch>

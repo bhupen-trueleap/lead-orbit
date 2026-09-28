@@ -1,13 +1,7 @@
 import { isSearchEntity } from '@/lib/search'
 import type { SearchEntity } from '@/lib/search'
-
-export type PageSize = 10 | 25 | 50 | 100
-
-export const PAGE_SIZES: ReadonlyArray<PageSize> = [10, 25, 50, 100]
-
-export const DEFAULT_PAGE_SIZE: PageSize = 25
-
-export const MAX_PAGE = 100_000
+import { isRecord } from '@/lib/guards'
+import type { ResultCount } from '@/lib/pagination'
 
 export const MAX_ENTITY_QUERY_LENGTH = 200
 
@@ -33,10 +27,6 @@ export interface EntitiesPage {
   entities: Array<SearchEntity>
   total: number
   types: Array<EntityTypeCount>
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
 
 const TYPE_PATTERN = /^[a-z_]{1,32}$/
@@ -90,22 +80,9 @@ function isEntityTypeCount(value: unknown): value is EntityTypeCount {
   )
 }
 
-export function isPageSize(value: unknown): value is PageSize {
-  return PAGE_SIZES.some((size) => size === value)
-}
-
-export function isPage(value: unknown): value is number {
-  return (
-    typeof value === 'number' &&
-    Number.isInteger(value) &&
-    value >= 1 &&
-    value <= MAX_PAGE
-  )
-}
-
 export async function fetchEntities(
   page: number,
-  pageSize: PageSize,
+  pageSize: ResultCount,
   filters: EntityFilters,
   signal?: AbortSignal,
 ): Promise<EntitiesPage | null> {

@@ -32,7 +32,7 @@ function Home() {
     <div className="mx-auto max-w-4xl space-y-10">
       <PageSection title="Search anything">
         <SearchBox
-          placeholder="Find AI founders in India with 5k+ LinkedIn followers"
+          placeholder="Describe who or what you are looking for, e.g. fintech founders in Singapore"
           onSearch={({ query, category, limit }) =>
             void navigate({
               to: '/searches',

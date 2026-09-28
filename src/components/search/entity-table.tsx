@@ -18,15 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { entityTypeLabel } from '@/lib/labels'
 import type { SearchEntity } from '@/lib/search'
-
-const typeLabels: Record<string, string> = {
-  person: 'Person',
-  company: 'Company',
-  organization: 'Organization',
-  publication: 'Publication',
-  page: 'Page',
-}
 
 const cellClass = 'border-r border-b'
 
@@ -162,7 +155,7 @@ export function EntityTable({
                     {name}
                   </TableCell>
                   <TableCell className={cellClass}>
-                    {typeLabels[type] ?? '—'}
+                    {entityTypeLabel(type, 'one')}
                   </TableCell>
                   <TableCell
                     className={`${cellClass} max-w-64 whitespace-normal`}

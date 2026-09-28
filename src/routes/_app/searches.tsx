@@ -4,21 +4,19 @@ import { useEffect, useRef } from 'react'
 import { EntityTable } from '@/components/search/entity-table'
 import { SaveSearchButton } from '@/components/search/save-search-button'
 import { SearchBox } from '@/components/search/search-box'
-import {
-  DEFAULT_SEARCH_LIMIT,
-  isSearchCategory,
-  isSearchLimit,
-} from '@/lib/search'
-import type { SearchCategory, SearchLimit } from '@/lib/search'
+import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
+import type { SearchCategory } from '@/lib/search'
 import { useSearch } from '@/lib/use-search'
+import { isResultCount } from '@/lib/pagination'
+import type { ResultCount } from '@/lib/pagination'
 
 export const Route = createFileRoute('/_app/searches')({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { q?: string; category?: SearchCategory; limit?: SearchLimit } => ({
+  ): { q?: string; category?: SearchCategory; limit?: ResultCount } => ({
     ...(typeof search.q === 'string' ? { q: search.q } : {}),
     ...(isSearchCategory(search.category) ? { category: search.category } : {}),
-    ...(isSearchLimit(search.limit) ? { limit: search.limit } : {}),
+    ...(isResultCount(search.limit) ? { limit: search.limit } : {}),
   }),
   component: Searches,
 })
@@ -44,7 +42,7 @@ function Searches() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <SearchBox
-        placeholder="Find AI founders in India with 5k+ LinkedIn followers"
+        placeholder="Describe who or what you are looking for, e.g. fintech founders in Singapore"
         defaultQuery={q}
         defaultCategory={category}
         defaultLimit={limit}

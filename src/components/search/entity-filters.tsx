@@ -1,6 +1,6 @@
-import { ArrowUpDown, CalendarDays, Globe, Search, Tag, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ArrowUpDown, CalendarDays, Globe, Tag, X } from 'lucide-react'
 
+import { DebouncedSearchInput } from '@/components/debounced-search-input'
 import { FilterPicker } from '@/components/filter-picker'
 import type { FilterField, FilterValues } from '@/components/filter-picker'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { MAX_ENTITY_QUERY_LENGTH, parseEntityFilters } from '@/lib/entities'
 import type {
   EntityFilters as Filters,
@@ -18,15 +17,7 @@ import type {
   EntitySort,
   EntityTypeCount,
 } from '@/lib/entities'
-
-const SEARCH_DEBOUNCE_MS = 300
-
-const typeLabels: Record<string, string> = {
-  person: 'People',
-  company: 'Companies',
-  organization: 'Organizations',
-  other: 'Other',
-}
+import { entityTypeLabel } from '@/lib/labels'
 
 const siteOptions: Array<{ label: string; value: EntitySite }> = [
   { label: 'LinkedIn', value: 'linkedin' },
@@ -49,26 +40,6 @@ export function EntityFilters({
   types,
   onChange,
 }: EntityFiltersProps) {
-  const [query, setQuery] = useState(filters.q ?? '')
-  const sentQueryRef = useRef(filters.q)
-
-  useEffect(() => {
-    if (filters.q !== sentQueryRef.current) {
-      sentQueryRef.current = filters.q
-      setQuery(filters.q ?? '')
-    }
-  }, [filters.q])
-
-  useEffect(() => {
-    const next = query.trim() || undefined
-    if (next === filters.q) return
-    const timer = setTimeout(() => {
-      sentQueryRef.current = next
-      onChange({ ...filters, q: next })
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(timer)
-  }, [query, filters, onChange])
-
   const fields: Array<FilterField> = [
     {
       kind: 'options',
@@ -76,7 +47,7 @@ export function EntityFilters({
       label: 'Type',
       icon: Tag,
       options: types.map(({ type, count }) => ({
-        label: `${typeLabels[type] ?? type} (${count})`,
+        label: `${entityTypeLabel(type, 'many')} (${count})`,
         value: type,
       })),
     },
@@ -112,18 +83,13 @@ export function EntityFilters({
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          value={query}
-          maxLength={MAX_ENTITY_QUERY_LENGTH}
-          aria-label="Search entities"
-          placeholder="Search by name, URL or details"
-          onChange={(event) => setQuery(event.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <DebouncedSearchInput
+        value={filters.q}
+        label="Search entities"
+        placeholder="Search by name, URL or details"
+        maxLength={MAX_ENTITY_QUERY_LENGTH}
+        onChange={(q) => onChange({ ...filters, q })}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <FilterPicker
           fields={fields}
@@ -141,11 +107,7 @@ export function EntityFilters({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => {
-                sentQueryRef.current = undefined
-                setQuery('')
-                onChange({ sort: filters.sort })
-              }}
+              onClick={() => onChange({ sort: filters.sort })}
             >
               <X />
               Clear

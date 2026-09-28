@@ -1,24 +1,46 @@
-import {
-  DEFAULT_SEARCH_LIMIT,
-  isSearchCategory,
-  isSearchLimit,
-} from '@/lib/search'
-import type { SearchCategory, SearchLimit, SearchRequest } from '@/lib/search'
+import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
+import type { SearchCategory, SearchRequest } from '@/lib/search'
+import { isResultCount } from '@/lib/pagination'
+import type { ResultCount } from '@/lib/pagination'
+import { isRecord } from '@/lib/guards'
+
+export const MAX_SAVED_QUERY_LENGTH = 200
+
+export interface SavedSearchFilters {
+  q?: string
+  category?: SearchCategory
+}
+
+export interface SavedSearchesPage {
+  savedSearches: Array<SavedSearch>
+  total: number
+}
+
+export function parseSavedSearchFilters(
+  input: Record<string, unknown>,
+): SavedSearchFilters {
+  const q =
+    typeof input.q === 'string' &&
+    input.q.trim() !== '' &&
+    input.q.length <= MAX_SAVED_QUERY_LENGTH
+      ? input.q.trim()
+      : undefined
+  return {
+    ...(q ? { q } : {}),
+    ...(isSearchCategory(input.category) ? { category: input.category } : {}),
+  }
+}
 
 export interface SavedSearch {
   id: string
   query: string
   category: SearchCategory | null
-  limit: SearchLimit
+  limit: ResultCount
   createdAt: string
 }
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
 
 export function parseDeleteRequest(body: unknown): string | null {
   if (!isRecord(body) || typeof body.id !== 'string') return null
@@ -38,7 +60,7 @@ function parseSavedSearch(value: unknown): SavedSearch | null {
     id: value.id,
     query: value.query,
     category: isSearchCategory(value.category) ? value.category : null,
-    limit: isSearchLimit(value.limit) ? value.limit : DEFAULT_SEARCH_LIMIT,
+    limit: isResultCount(value.limit) ? value.limit : DEFAULT_SEARCH_LIMIT,
     createdAt: value.createdAt,
   }
 }
@@ -52,17 +74,36 @@ export async function saveSearch(request: SearchRequest): Promise<boolean> {
   return response.ok
 }
 
-export async function listSavedSearches(
+export async function fetchSavedSearches(
+  page: number,
+  pageSize: ResultCount,
+  filters: SavedSearchFilters,
   signal?: AbortSignal,
-): Promise<Array<SavedSearch> | null> {
-  const response = await fetch('/api/saved-searches', { signal })
+): Promise<SavedSearchesPage | null> {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  })
+  for (const [key, value] of Object.entries(filters)) {
+    if (typeof value === 'string') params.set(key, value)
+  }
+  const response = await fetch(`/api/saved-searches?${params}`, { signal })
   if (!response.ok) return null
   const data: unknown = await response.json()
-  if (!isRecord(data) || !Array.isArray(data.savedSearches)) return null
-  return data.savedSearches.flatMap((item: unknown) => {
-    const saved = parseSavedSearch(item)
-    return saved ? [saved] : []
-  })
+  if (
+    !isRecord(data) ||
+    !Array.isArray(data.savedSearches) ||
+    typeof data.total !== 'number'
+  ) {
+    return null
+  }
+  return {
+    savedSearches: data.savedSearches.flatMap((item: unknown) => {
+      const saved = parseSavedSearch(item)
+      return saved ? [saved] : []
+    }),
+    total: data.total,
+  }
 }
 
 export async function deleteSavedSearch(id: string): Promise<boolean> {

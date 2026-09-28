@@ -1,0 +1,1 @@
+DROP TABLE "exa_requests" CASCADE;

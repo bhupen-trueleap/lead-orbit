@@ -166,26 +166,11 @@ export const searches = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     query: text().notNull(),
     category: text(),
+    resultLimit: integer(),
     createdByEmail: text().notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index().on(table.createdByEmail, table.createdAt)],
-)
-
-export const exaRequests = pgTable(
-  'exa_requests',
-  {
-    id: uuid().primaryKey().defaultRandom(),
-    searchId: uuid().references(() => searches.id, { onDelete: 'set null' }),
-    exaRequestId: text(),
-    request: jsonb().$type<Record<string, unknown>>().notNull(),
-    resolvedSearchType: text(),
-    costDollars: doublePrecision(),
-    searchTimeMs: doublePrecision(),
-    resultCount: integer().notNull().default(0),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  },
-  (table) => [index().on(table.searchId), index().on(table.createdAt)],
 )
 
 export const searchResults = pgTable(
