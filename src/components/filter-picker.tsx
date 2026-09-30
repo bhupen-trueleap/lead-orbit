@@ -34,7 +34,12 @@ export interface RangeField extends BaseField {
   max?: number
 }
 
-export type FilterField = OptionsField | RangeField
+export interface TextField extends BaseField {
+  kind: 'text'
+  placeholder?: string
+}
+
+export type FilterField = OptionsField | RangeField | TextField
 
 export type FilterValues = Partial<Record<string, string>>
 
@@ -51,7 +56,7 @@ interface FilterPickerProps {
 }
 
 function isFieldActive(field: FilterField, values: FilterValues): boolean {
-  if (field.kind === 'options') return values[field.key] !== undefined
+  if (field.kind !== 'range') return values[field.key] !== undefined
   const { from, to } = rangeKeys(field.key)
   return values[from] !== undefined || values[to] !== undefined
 }
@@ -63,13 +68,52 @@ function chipLabel(field: FilterField, values: FilterValues): string | null {
         ?.label ?? null
     )
   }
+  if (field.kind === 'text') {
+    const text = values[field.key]
+    return text ? `contains “${text}”` : null
+  }
   const { from, to } = rangeKeys(field.key)
   const start = values[from]
   const end = values[to]
-  if (start && end) return `${start} – ${end}`
-  if (start) return `from ${start}`
-  if (end) return `until ${end}`
+  const format = (value: string) =>
+    field.inputType === 'number' ? Number(value).toLocaleString('en') : value
+  if (start && end) return `${format(start)} – ${format(end)}`
+  if (start)
+    return field.inputType === 'number' ? `≥ ${format(start)}` : `from ${start}`
+  if (end)
+    return field.inputType === 'number' ? `≤ ${format(end)}` : `until ${end}`
   return null
+}
+
+function TextPanel({
+  field,
+  values,
+  onChange,
+}: {
+  field: TextField
+  values: FilterValues
+  onChange: FilterPickerProps['onChange']
+}) {
+  function commit(raw: string) {
+    const value = raw.trim() || undefined
+    if (value !== values[field.key]) onChange({ [field.key]: value })
+  }
+
+  return (
+    <label className="block space-y-1 p-1">
+      <span className="text-xs text-muted-foreground">Contains</span>
+      <Input
+        key={values[field.key] ?? ''}
+        defaultValue={values[field.key] ?? ''}
+        placeholder={field.placeholder}
+        maxLength={200}
+        onBlur={(event) => commit(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commit(event.currentTarget.value)
+        }}
+      />
+    </label>
+  )
 }
 
 function OptionsPanel({
@@ -162,7 +206,7 @@ export function FilterPicker({ fields, values, onChange }: FilterPickerProps) {
   ).length
 
   function clearField(field: FilterField) {
-    if (field.kind === 'options') {
+    if (field.kind !== 'range') {
       onChange({ [field.key]: undefined })
     } else {
       const { from, to } = rangeKeys(field.key)
@@ -189,7 +233,7 @@ export function FilterPicker({ fields, values, onChange }: FilterPickerProps) {
           <div className="flex min-h-48">
             <nav
               aria-label="Filter fields"
-              className="w-40 shrink-0 space-y-0.5 border-r p-1.5"
+              className="max-h-80 w-44 shrink-0 space-y-0.5 overflow-y-auto border-r p-1.5"
             >
               {fields.map((field) => {
                 const Icon = field.icon
@@ -229,6 +273,13 @@ export function FilterPicker({ fields, values, onChange }: FilterPickerProps) {
               ) : null}
               {activeField?.kind === 'range' ? (
                 <RangePanel
+                  field={activeField}
+                  values={values}
+                  onChange={onChange}
+                />
+              ) : null}
+              {activeField?.kind === 'text' ? (
+                <TextPanel
                   field={activeField}
                   values={values}
                   onChange={onChange}

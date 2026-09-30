@@ -3,19 +3,40 @@ import { Link } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatRelativeTime } from '@/lib/recent-searches'
 import type { RecentSearch } from '@/lib/recent-searches'
+import { columnIdsToParam } from '@/lib/columns'
 import { categoryLabels } from '@/lib/labels'
+import type { AgentRunStatus } from '@/lib/agent'
+
+const agentStatusLabels: Record<AgentRunStatus, string> = {
+  queued: 'Agent queued',
+  running: 'Agent running',
+  completed: 'Agent',
+  failed: 'Agent failed',
+  cancelled: 'Agent cancelled',
+}
 
 export function RecentSearchCard({
+  id,
   query,
   category,
   limit,
+  mode,
+  columns,
   results,
+  agentStatus,
   createdAt,
 }: RecentSearch) {
   return (
     <Link
       to="/searches"
-      search={{ q: query, category: category ?? undefined, limit }}
+      search={{
+        q: query,
+        category: category ?? undefined,
+        limit,
+        mode,
+        columns: columnIdsToParam(columns),
+        ...(agentStatus ? { run: id } : {}),
+      }}
       className="block rounded-xl outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Card className="h-full transition-colors hover:bg-muted/40">
@@ -26,6 +47,7 @@ export function RecentSearchCard({
           <p>
             {results} {results === 1 ? 'result' : 'results'}
             {category ? ` · ${categoryLabels[category]}` : ''}
+            {agentStatus ? ` · ${agentStatusLabels[agentStatus]}` : ''}
           </p>
           <p>
             <time

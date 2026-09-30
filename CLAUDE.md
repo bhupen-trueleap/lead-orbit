@@ -3,7 +3,7 @@
 ## Mission
 
 - Build LeadOrbit: a web-based intelligent search and discovery platform for people, companies, and other entities using natural-language queries.
-- Search flow: check PostgreSQL for existing data first, then use the Exa API for fresh web discovery and enrichment, store results back in PostgreSQL, and stream them to the user.
+- Search flow: every search calls the Exa API directly, stores all results in PostgreSQL, and streams them to the user. There is no database-first lookup; stored data is browsed and filtered on the Entities page.
 - Keep the codebase simple, composable, and reusable.
 - No app-level auth, user accounts, or profiles: access is gated by Cloudflare and limited to @trueleap.io users.
 - Prioritize fastest load time at deployment and fast SSR.

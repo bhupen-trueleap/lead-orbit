@@ -4,9 +4,12 @@ import {
   count,
   desc,
   eq,
+  exists,
   gte,
   ilike,
+  isNull,
   lt,
+  lte,
   not,
   or,
   sql,
@@ -14,8 +17,10 @@ import {
 import type { SQL } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { companies, entities, people } from '@/db/schema'
-import type { EntitiesPage, EntityFilters } from '@/lib/entities'
+import { companies, entities, fieldValues, people } from '@/db/schema'
+import type { ColumnFilters, EntitiesPage, EntityFilters } from '@/lib/entities'
+import type { ColumnDef } from '@/lib/columns'
+import { listColumns, loadFieldValues } from '@/server/columns'
 import { entityRowFields, toSearchEntity } from '@/server/entity-rows'
 import { escapeLike } from '@/server/sql'
 import type { ResultCount } from '@/lib/pagination'
@@ -28,14 +33,50 @@ function startOfDay(date: string, offsetDays = 0): Date {
   return value
 }
 
-function buildWhere({
-  q,
-  type,
-  site,
-  addedFrom,
-  addedTo,
-}: EntityFilters): SQL | undefined {
+function columnCondition(
+  column: ColumnDef,
+  filter: NonNullable<ColumnFilters[string]>,
+): SQL | undefined {
+  const checks: Array<SQL | undefined> = []
+  if (column.type === 'text' && filter.contains !== undefined) {
+    checks.push(
+      ilike(fieldValues.valueText, `%${escapeLike(filter.contains)}%`),
+    )
+  }
+  if (column.type === 'number') {
+    if (filter.from !== undefined) {
+      checks.push(gte(fieldValues.valueNumber, filter.from))
+    }
+    if (filter.to !== undefined) {
+      checks.push(lte(fieldValues.valueNumber, filter.to))
+    }
+  }
+  if (checks.length === 0) return undefined
+  return exists(
+    db
+      .select({ one: sql`1` })
+      .from(fieldValues)
+      .where(
+        and(
+          eq(fieldValues.entityId, entities.id),
+          eq(fieldValues.columnId, column.id),
+          isNull(fieldValues.searchId),
+          ...checks,
+        ),
+      ),
+  )
+}
+
+function buildWhere(
+  { q, type, site, addedFrom, addedTo, cols }: EntityFilters,
+  filterColumns: Array<ColumnDef>,
+): SQL | undefined {
   const conditions: Array<SQL | undefined> = []
+
+  for (const column of filterColumns) {
+    const filter = cols?.[column.key]
+    if (filter) conditions.push(columnCondition(column, filter))
+  }
 
   if (q) {
     const pattern = `%${escapeLike(q)}%`
@@ -49,6 +90,18 @@ function buildWhere({
         ilike(people.location, pattern),
         ilike(companies.hqCity, pattern),
         ilike(companies.hqCountry, pattern),
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(fieldValues)
+            .where(
+              and(
+                eq(fieldValues.entityId, entities.id),
+                isNull(fieldValues.searchId),
+                ilike(fieldValues.valueText, pattern),
+              ),
+            ),
+        ),
       ),
     )
   }
@@ -71,7 +124,13 @@ export async function listEntities(
   pageSize: ResultCount,
   filters: EntityFilters,
 ): Promise<EntitiesPage> {
-  const where = buildWhere(filters)
+  const entityColumns = (await listColumns()).filter(
+    (column) => column.scope === 'entity' && column.type !== 'boolean',
+  )
+  const filterColumns = entityColumns.filter(
+    (column) => filters.cols?.[column.key] !== undefined,
+  )
+  const where = buildWhere(filters, filterColumns)
   const orderBy =
     filters.sort === 'name'
       ? [asc(sql`lower(${entities.name})`), asc(entities.id)]
@@ -100,8 +159,18 @@ export async function listEntities(
       .orderBy(desc(count())),
   ])
 
+  const values = await loadFieldValues(
+    entityColumns,
+    { entityIds: rows.map((row) => row.id), pageIds: [] },
+    null,
+  )
+
   return {
-    entities: rows.map((row) => toSearchEntity(row, 'database')),
+    entities: rows.map((row) => ({
+      ...toSearchEntity(row),
+      values: values.get(row.id)?.values ?? {},
+      evidence: values.get(row.id)?.evidence ?? {},
+    })),
     total: totals.at(0)?.total ?? 0,
     types,
   }

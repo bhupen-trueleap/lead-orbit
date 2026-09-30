@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 
 import { companies, entities, people, webPages } from '@/db/schema'
-import type { SearchEntity, SearchSource } from '@/lib/search'
+import type { SearchEntity } from '@/lib/search'
 
 export const entityRowFields = {
   id: entities.id,
@@ -65,10 +65,7 @@ function roleFor(row: EntityRow): string | null {
   return null
 }
 
-export function toSearchEntity(
-  row: EntityRow,
-  source: SearchSource,
-): SearchEntity {
+export function toSearchEntity(row: EntityRow): SearchEntity {
   return {
     id: row.id,
     name: row.name,
@@ -79,6 +76,7 @@ export function toSearchEntity(
       row.personLocation ?? joinParts([row.hqCity, row.hqCountry], ', '),
     highlight:
       row.highlight ?? (row.type === 'person' ? null : row.description),
-    source,
+    values: {},
+    evidence: {},
   }
 }

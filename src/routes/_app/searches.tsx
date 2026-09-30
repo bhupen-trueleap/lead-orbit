@@ -1,74 +1,273 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Download, Sparkles } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { EntityTable } from '@/components/search/entity-table'
 import { SaveSearchButton } from '@/components/search/save-search-button'
+import { AgentProgress } from '@/components/search/agent-progress'
 import { SearchBox } from '@/components/search/search-box'
-import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
-import type { SearchCategory } from '@/lib/search'
+import { SplitPane } from '@/components/split-pane'
+import { Button } from '@/components/ui/button'
+import { TablePagination } from '@/components/table-pagination'
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_MODE,
+  isSearchCategory,
+  isSearchMode,
+  isSearchLimit,
+} from '@/lib/search'
+import type { SearchCategory, SearchMode } from '@/lib/search'
 import { useSearch } from '@/lib/use-search'
-import { isResultCount } from '@/lib/pagination'
+import {
+  csvFileName,
+  downloadCsv,
+  entityCsvHeader,
+  entityCsvRow,
+  toCsv,
+} from '@/lib/csv'
+import { columnIdsFromParam, isUuid } from '@/lib/columns'
+import { DEFAULT_AGENT_EFFORT, isAgentEffort } from '@/lib/agent'
+import type { AgentEffort } from '@/lib/agent'
+import { DEFAULT_PAGE_SIZE, RESULT_COUNTS } from '@/lib/pagination'
 import type { ResultCount } from '@/lib/pagination'
 
 export const Route = createFileRoute('/_app/searches')({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { q?: string; category?: SearchCategory; limit?: ResultCount } => ({
+  ): {
+    q?: string
+    category?: SearchCategory
+    limit?: number
+    mode?: SearchMode
+    effort?: AgentEffort
+    columns?: string
+    run?: string
+  } => ({
     ...(typeof search.q === 'string' ? { q: search.q } : {}),
     ...(isSearchCategory(search.category) ? { category: search.category } : {}),
-    ...(isResultCount(search.limit) ? { limit: search.limit } : {}),
+    ...(isSearchLimit(search.limit) ? { limit: search.limit } : {}),
+    ...(isSearchMode(search.mode) ? { mode: search.mode } : {}),
+    ...(isAgentEffort(search.effort) ? { effort: search.effort } : {}),
+    ...(isUuid(search.run) ? { run: search.run } : {}),
+    ...(typeof search.columns === 'string' && search.columns !== ''
+      ? { columns: search.columns }
+      : {}),
   }),
   component: Searches,
 })
 
 function Searches() {
-  const { q, category, limit } = Route.useSearch()
-  const { entities, status, message, request, search } = useSearch()
+  const {
+    q,
+    category,
+    limit,
+    mode,
+    effort,
+    columns: columnParam,
+    run,
+  } = Route.useSearch()
+  const navigate = useNavigate({ from: Route.fullPath })
+  const urlColumns = useMemo(
+    () => columnIdsFromParam(columnParam),
+    [columnParam],
+  )
+  const {
+    entities,
+    columns,
+    status,
+    message,
+    request,
+    agent,
+    startedAt,
+    search,
+    resume,
+  } = useSearch()
   const startedRef = useRef(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<ResultCount>(DEFAULT_PAGE_SIZE)
+  const resultsRef = useRef<HTMLDivElement>(null)
+
+  function revealResults() {
+    const results = resultsRef.current
+    if (!results) return
+    const { top } = results.getBoundingClientRect()
+    if (top < window.innerHeight * 0.6) return
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    results.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    })
+  }
+
+  const confirmOnLoad = !run && mode === 'agent'
 
   useEffect(() => {
-    if (q && !startedRef.current) {
+    if (startedRef.current) return
+    if (run) {
+      startedRef.current = true
+      void resume(run)
+    } else if (q && mode !== 'agent') {
       startedRef.current = true
       void search({
         query: q,
         category,
         limit: limit ?? DEFAULT_SEARCH_LIMIT,
+        mode: mode ?? DEFAULT_SEARCH_MODE,
+        effort: DEFAULT_AGENT_EFFORT,
+        columns: urlColumns,
       })
     }
-  }, [q, category, limit, search])
+  }, [q, category, limit, mode, urlColumns, run, search, resume])
+
+  const agentSearchId = agent?.searchId
+  useEffect(() => {
+    if (!agentSearchId || agentSearchId === run) return
+    void navigate({
+      search: (prev) => ({ ...prev, run: agentSearchId }),
+      replace: true,
+    })
+  }, [agentSearchId, run, navigate])
 
   const isSearching = status === 'searching'
+  const lastPage = Math.max(1, Math.ceil(entities.length / pageSize))
+  const currentPage = Math.min(page, lastPage)
+  const pageStart = (currentPage - 1) * pageSize
+  const visibleEntities = entities.slice(pageStart, pageStart + pageSize)
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-6">
+  const searchPanel = (
+    <div className="space-y-5">
       <SearchBox
+        layout="panel"
         placeholder="Describe who or what you are looking for, e.g. fintech founders in Singapore"
         defaultQuery={q}
         defaultCategory={category}
         defaultLimit={limit}
+        defaultMode={mode}
+        defaultEffort={effort}
+        defaultColumns={urlColumns}
         isSearching={isSearching}
-        onSearch={(next) => void search(next)}
+        confirmOnLoad={confirmOnLoad}
+        onSearch={(next) => {
+          setPage(1)
+          if (run) {
+            void navigate({
+              search: (prev) => ({ ...prev, run: undefined }),
+              replace: true,
+            })
+          }
+          void search(next)
+          requestAnimationFrame(revealResults)
+        }}
       />
-
-      <div className="flex items-center justify-between gap-4">
-        <div aria-live="polite" className="text-sm text-muted-foreground">
-          {isSearching ? 'Searching…' : null}
-          {status === 'done' && entities.length === 0
-            ? 'No results found.'
-            : null}
-          {message}
+      {request || agent ? (
+        <div className="space-y-3 border-t pt-4">
+          <div aria-live="polite" className="space-y-1 text-sm">
+            {isSearching && agent && startedAt !== null ? (
+              <AgentProgress status={agent.status} startedAt={startedAt} />
+            ) : isSearching ? (
+              <p className="text-muted-foreground">Searching…</p>
+            ) : (
+              <p className="font-medium">
+                {entities.length === 0
+                  ? 'No results found'
+                  : `${entities.length} ${entities.length === 1 ? 'result' : 'results'}`}
+              </p>
+            )}
+            {message ? (
+              <p className="text-muted-foreground">{message}</p>
+            ) : null}
+          </div>
+          {!isSearching ? (
+            <div className="flex flex-wrap gap-2">
+              {request ? (
+                <SaveSearchButton
+                  key={`${request.query}|${request.category}|${request.limit}|${request.mode}|${request.columns.join(',')}`}
+                  request={request}
+                />
+              ) : null}
+              {entities.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    downloadCsv(
+                      csvFileName(request?.query ?? q ?? 'search'),
+                      toCsv([
+                        entityCsvHeader(columns),
+                        ...entities.map((entity) =>
+                          entityCsvRow(entity, columns),
+                        ),
+                      ]),
+                    )
+                  }
+                >
+                  <Download />
+                  Export CSV
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
-        {request && !isSearching ? (
-          <SaveSearchButton
-            key={`${request.query}|${request.category}|${request.limit}`}
-            request={request}
+      ) : null}
+    </div>
+  )
+
+  const resultsPanel =
+    entities.length > 0 || isSearching ? (
+      <div className="space-y-4">
+        <EntityTable
+          entities={visibleEntities}
+          columns={columns}
+          isLoading={isSearching}
+          startIndex={pageStart}
+        />
+        {entities.length > 0 ? (
+          <TablePagination
+            page={currentPage}
+            pageSize={pageSize}
+            pageSizes={RESULT_COUNTS}
+            total={entities.length}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setPage(1)
+            }}
           />
         ) : null}
       </div>
+    ) : (
+      <div className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-xl border p-8 text-center @3xl:min-h-[calc(100svh-8.5rem)]">
+        <span className="flex size-10 items-center justify-center rounded-full bg-muted">
+          <Sparkles aria-hidden="true" className="size-4.5" />
+        </span>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">
+            {status === 'done'
+              ? 'No results found'
+              : 'Run a search to see results'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {status === 'done'
+              ? 'Try different wording or a deeper search'
+              : 'Press ↵ to search · results stream in live'}
+          </p>
+        </div>
+      </div>
+    )
 
-      {entities.length > 0 || isSearching ? (
-        <EntityTable entities={entities} isLoading={isSearching} />
-      ) : null}
-    </div>
+  return (
+    <SplitPane
+      label="Search panel"
+      storageKey="leadorbit.search-panel-width"
+      left={searchPanel}
+      right={
+        <div ref={resultsRef} className="scroll-mt-4">
+          {resultsPanel}
+        </div>
+      }
+    />
   )
 }

@@ -6,6 +6,7 @@ import { RecentSearchCard } from '@/components/search/recent-search-card'
 import { SearchBox } from '@/components/search/search-box'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetchRecentSearches } from '@/lib/recent-searches'
+import { columnIdsToParam } from '@/lib/columns'
 import type { RecentSearch } from '@/lib/recent-searches'
 
 export const Route = createFileRoute('/_app/')({ component: Home })
@@ -33,10 +34,18 @@ function Home() {
       <PageSection title="Search anything">
         <SearchBox
           placeholder="Describe who or what you are looking for, e.g. fintech founders in Singapore"
-          onSearch={({ query, category, limit }) =>
+          confirmAgentRuns={false}
+          onSearch={({ query, category, limit, mode, effort, columns }) =>
             void navigate({
               to: '/searches',
-              search: { q: query, category, limit },
+              search: {
+                q: query,
+                category,
+                limit,
+                mode,
+                ...(mode === 'agent' ? { effort } : {}),
+                columns: columnIdsToParam(columns),
+              },
             })
           }
         />

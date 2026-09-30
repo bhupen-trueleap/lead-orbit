@@ -1,5 +1,4 @@
-import { and, asc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
-import type { SQL } from 'drizzle-orm'
+import { eq, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import {
@@ -8,6 +7,7 @@ import {
   entityPages,
   people,
   positions,
+  searchColumns,
   searchResults,
   searches,
   webPages,
@@ -16,68 +16,41 @@ import type {
   SearchCategory,
   SearchEntity,
   SearchEvent,
-  SearchSource,
+  SearchMode,
 } from '@/lib/search'
 import { normalizeUrl } from '@/lib/url'
 import { searchExa } from '@/server/exa'
-import { escapeLike } from '@/server/sql'
-import type { ExaEntity, ExaResult } from '@/server/exa'
+import { runAgentSearch } from '@/server/agent-search'
+import type { AgentEffort } from '@/lib/agent'
+import { attachValues, loadEntityRows } from '@/server/result-rows'
+import type { ResultRow } from '@/server/result-rows'
+import {
+  buildSummarySchema,
+  resolveColumns,
+  storeFieldValues,
+} from '@/server/columns'
+import type { ColumnDef } from '@/lib/columns'
+import type { ExaEntity, ExaResult, WebSearchMode } from '@/server/exa'
 import {
   describePerson,
   mapCompany,
   mapPerson,
   mapPositions,
 } from '@/server/exa-mappers'
-import { entityRowFields, toSearchEntity } from '@/server/entity-rows'
-import type { EntityRow } from '@/server/entity-rows'
-import type { ResultCount } from '@/lib/pagination'
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 interface SearchInput {
   query: string
   category?: SearchCategory
-  limit: ResultCount
+  limit: number
+  mode: SearchMode
+  effort: AgentEffort
+  columns: Array<string>
   email: string
 }
 
-type RefKind = 'entity' | 'page'
-
-interface StoredRef {
-  kind: RefKind
-  id: string
-}
-
-interface ResultRow {
-  entity: SearchEntity
-  entityId: string | null
-  pageId: string | null
-}
-
-function entityTypeFor(category: SearchCategory | undefined): string | null {
-  if (category === 'people') return 'person'
-  if (category === 'company') return 'company'
-  return null
-}
-
-async function loadEntityRows(
-  ids: Array<string>,
-  source: SearchSource,
-): Promise<Map<string, SearchEntity>> {
-  if (ids.length === 0) return new Map()
-  const rows: Array<EntityRow> = await db
-    .select(entityRowFields)
-    .from(entities)
-    .leftJoin(people, eq(people.entityId, entities.id))
-    .leftJoin(companies, eq(companies.entityId, entities.id))
-    .where(inArray(entities.id, ids))
-  return new Map(rows.map((row) => [row.id, toSearchEntity(row, source)]))
-}
-
-function pageRow(
-  page: typeof webPages.$inferSelect,
-  source: SearchSource,
-): SearchEntity {
+function pageRow(page: typeof webPages.$inferSelect): SearchEntity {
   return {
     id: page.id,
     name: page.title ?? page.url,
@@ -86,160 +59,9 @@ function pageRow(
     role: page.author,
     location: null,
     highlight: page.highlights.at(0) ?? null,
-    source,
+    values: {},
+    evidence: {},
   }
-}
-
-async function findStoredResults(
-  query: string,
-  category: SearchCategory | undefined,
-  limit: ResultCount,
-): Promise<Array<ResultRow>> {
-  const type = entityTypeFor(category)
-  const tsQuery = sql`websearch_to_tsquery('english', ${query})`
-  const queryTerms = sql`strip(to_tsvector('english', ${query}))`
-
-  const previous = await db
-    .select({
-      entityId: searchResults.entityId,
-      pageId: searchResults.pageId,
-    })
-    .from(searchResults)
-    .innerJoin(searches, eq(searches.id, searchResults.searchId))
-    .leftJoin(entities, eq(entities.id, searchResults.entityId))
-    .where(
-      and(
-        or(
-          sql`lower(${searches.query}) = ${query.toLowerCase()}`,
-          and(
-            sql`length(${queryTerms}) > 0`,
-            sql`strip(to_tsvector('english', ${searches.query})) = ${queryTerms}`,
-          ),
-        ),
-        category ? eq(searches.category, category) : isNull(searches.category),
-        type ? eq(entities.type, type) : undefined,
-      ),
-    )
-    .orderBy(sql`${searches.createdAt} desc`, asc(searchResults.rank))
-    .limit(limit * 4)
-
-  const byName = await db
-    .select({ id: entities.id })
-    .from(entities)
-    .where(
-      and(
-        ilike(entities.name, `%${escapeLike(query)}%`),
-        type ? eq(entities.type, type) : undefined,
-      ),
-    )
-    .limit(limit)
-
-  const textMatches = async (textQuery: SQL) => {
-    const entityRelevance = sql<number>`max(
-      ts_rank(${entities.searchVector}, ${textQuery})
-      + coalesce(ts_rank(${webPages.searchVector}, ${textQuery}), 0)
-    )`
-    const entityMatches = await db
-      .select({ id: entities.id, relevance: entityRelevance })
-      .from(entities)
-      .leftJoin(entityPages, eq(entityPages.entityId, entities.id))
-      .leftJoin(webPages, eq(webPages.id, entityPages.pageId))
-      .where(
-        and(
-          or(
-            sql`${entities.searchVector} @@ ${textQuery}`,
-            sql`${webPages.searchVector} @@ ${textQuery}`,
-          ),
-          type ? eq(entities.type, type) : undefined,
-        ),
-      )
-      .groupBy(entities.id)
-      .orderBy(sql`${entityRelevance} desc`)
-      .limit(limit)
-
-    const pageRelevance = sql<number>`ts_rank(${webPages.searchVector}, ${textQuery})`
-    const pageMatches = category
-      ? []
-      : await db
-          .select({ id: webPages.id, relevance: pageRelevance })
-          .from(webPages)
-          .where(
-            and(
-              sql`${webPages.searchVector} @@ ${textQuery}`,
-              sql`not exists (select 1 from ${entityPages} where ${entityPages.pageId} = ${webPages.id})`,
-            ),
-          )
-          .orderBy(sql`${pageRelevance} desc`)
-          .limit(limit)
-
-    const matches: Array<StoredRef & { relevance: number }> = [
-      ...entityMatches.map((row): StoredRef & { relevance: number } => ({
-        kind: 'entity',
-        ...row,
-      })),
-      ...pageMatches.map((row): StoredRef & { relevance: number } => ({
-        kind: 'page',
-        ...row,
-      })),
-    ]
-    return matches.sort((left, right) => right.relevance - left.relevance)
-  }
-
-  let byText = await textMatches(tsQuery)
-  if (byText.length > 0 && byText.length < limit) {
-    const anyWord = sql`replace(${tsQuery}::text, ' & ', ' | ')::tsquery`
-    const seenIds = new Set(byText.map((row) => row.id))
-    byText = [
-      ...byText,
-      ...(await textMatches(anyWord)).filter((row) => !seenIds.has(row.id)),
-    ]
-  }
-  byText = byText.slice(0, limit)
-
-  const refs: Array<StoredRef> = [
-    ...previous.flatMap((row): Array<StoredRef> => {
-      if (row.entityId) return [{ kind: 'entity', id: row.entityId }]
-      return row.pageId ? [{ kind: 'page', id: row.pageId }] : []
-    }),
-    ...byName.map((row): StoredRef => ({ kind: 'entity', id: row.id })),
-    ...byText,
-  ]
-
-  const ordered: Array<StoredRef> = []
-  const seenRefs = new Set<string>()
-  for (const ref of refs) {
-    const key = `${ref.kind}:${ref.id}`
-    if (seenRefs.has(key)) continue
-    seenRefs.add(key)
-    ordered.push(ref)
-    if (ordered.length === limit) break
-  }
-
-  const entityIds = ordered.flatMap((ref) =>
-    ref.kind === 'entity' ? [ref.id] : [],
-  )
-  const pageIds = ordered.flatMap((ref) =>
-    ref.kind === 'page' ? [ref.id] : [],
-  )
-
-  const entityRows = await loadEntityRows(entityIds, 'database')
-  const pages = new Map(
-    (pageIds.length > 0
-      ? await db.select().from(webPages).where(inArray(webPages.id, pageIds))
-      : []
-    ).map((page) => [page.id, page]),
-  )
-
-  return ordered.flatMap((ref): Array<ResultRow> => {
-    if (ref.kind === 'entity') {
-      const entity = entityRows.get(ref.id)
-      return entity ? [{ entity, entityId: ref.id, pageId: null }] : []
-    }
-    const page = pages.get(ref.id)
-    return page
-      ? [{ entity: pageRow(page, 'database'), entityId: null, pageId: page.id }]
-      : []
-  })
 }
 
 async function upsertPage(
@@ -416,6 +238,8 @@ async function upsertEntity(
 
 async function storeExaResults(
   results: Array<ExaResult>,
+  columnDefs: Array<ColumnDef>,
+  searchId: string,
 ): Promise<Array<ResultRow>> {
   const stored = await db.transaction(async (tx) => {
     const rows: Array<{
@@ -435,6 +259,12 @@ async function storeExaResults(
           .values({ entityId, pageId: page.id })
           .onConflictDoNothing()
       }
+      await storeFieldValues(tx, columnDefs, result.extracted, {
+        entityId,
+        pageId: page.id,
+        searchId,
+        pageText: result.text,
+      })
       rows.push({ entityId, page })
     }
     return rows
@@ -442,21 +272,36 @@ async function storeExaResults(
 
   const entityRows = await loadEntityRows(
     stored.flatMap((row) => (row.entityId ? [row.entityId] : [])),
-    'exa',
   )
 
-  return stored.flatMap(({ entityId, page }) => {
-    const entity = entityId ? entityRows.get(entityId) : pageRow(page, 'exa')
-    return entity ? [{ entity, entityId, pageId: page.id }] : []
-  })
+  return attachValues(
+    stored.flatMap(({ entityId, page }): Array<ResultRow> => {
+      const entity = entityId ? entityRows.get(entityId) : pageRow(page)
+      return entity ? [{ entity, entityId, pageId: page.id }] : []
+    }),
+    columnDefs,
+    searchId,
+  )
 }
 
-export async function* runSearch({
+export async function* runSearch(
+  input: SearchInput,
+): AsyncGenerator<SearchEvent> {
+  if (input.mode === 'agent') {
+    yield* runAgentSearch(input)
+    return
+  }
+  yield* runWebSearch({ ...input, mode: input.mode })
+}
+
+async function* runWebSearch({
   query,
   category,
   limit,
+  mode,
+  columns: columnIds,
   email,
-}: SearchInput): AsyncGenerator<SearchEvent> {
+}: SearchInput & { mode: WebSearchMode }): AsyncGenerator<SearchEvent> {
   const search = (
     await db
       .insert(searches)
@@ -464,6 +309,7 @@ export async function* runSearch({
         query,
         category: category ?? null,
         resultLimit: limit,
+        mode,
         createdByEmail: email,
       })
       .returning({ id: searches.id })
@@ -471,29 +317,37 @@ export async function* runSearch({
 
   if (!search) throw new Error('Failed to record search')
 
+  const columnDefs = await resolveColumns(columnIds, category)
+  if (columnDefs.length > 0) {
+    await db.insert(searchColumns).values(
+      columnDefs.map((column, index) => ({
+        searchId: search.id,
+        columnId: column.id,
+        position: index,
+      })),
+    )
+  }
+  yield { type: 'columns', columns: columnDefs }
+
   const seen = new Map<string, ResultRow>()
 
   try {
-    const stored = await findStoredResults(query, category, limit)
-    for (const row of stored) {
+    const results = await searchExa({
+      query,
+      category,
+      numResults: limit,
+      mode,
+      summary:
+        columnDefs.length > 0 ? buildSummarySchema(columnDefs) : undefined,
+    })
+    for (const row of await storeExaResults(results, columnDefs, search.id)) {
+      if (seen.has(row.entity.id)) continue
       seen.set(row.entity.id, row)
       yield { type: 'entity', entity: row.entity }
     }
-
-    try {
-      const results = await searchExa({ query, category, numResults: limit })
-      for (const row of await storeExaResults(results)) {
-        if (seen.has(row.entity.id)) continue
-        seen.set(row.entity.id, row)
-        yield { type: 'entity', entity: row.entity }
-      }
-    } catch (error) {
-      console.error('Exa search failed', error)
-      yield {
-        type: 'error',
-        message: 'Fresh web discovery failed. Showing stored results only.',
-      }
-    }
+  } catch (error) {
+    console.error('Exa search failed', error)
+    yield { type: 'error', message: 'Search failed. Please try again.' }
   } finally {
     const rows = [...seen.values()]
     if (rows.length > 0) {
@@ -505,7 +359,6 @@ export async function* runSearch({
             entityId: row.entityId,
             pageId: row.pageId,
             rank: index + 1,
-            source: row.entity.source,
           })),
         )
         .onConflictDoNothing()

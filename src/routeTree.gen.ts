@@ -15,7 +15,10 @@ import { Route as AppCollectionsRouteImport } from './routes/_app/collections'
 import { Route as AppEntitiesRouteImport } from './routes/_app/entities'
 import { Route as AppSavedSearchesRouteImport } from './routes/_app/saved-searches'
 import { Route as AppSearchesRouteImport } from './routes/_app/searches'
+import { Route as ApiAgentRunRouteImport } from './routes/api/agent-run'
+import { Route as ApiColumnsRouteImport } from './routes/api/columns'
 import { Route as ApiEntitiesRouteImport } from './routes/api/entities'
+import { Route as ApiEntitiesExportRouteImport } from './routes/api/entities-export'
 import { Route as ApiRecentSearchesRouteImport } from './routes/api/recent-searches'
 import { Route as ApiSavedSearchesRouteImport } from './routes/api/saved-searches'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
@@ -49,9 +52,24 @@ const AppSearchesRoute = AppSearchesRouteImport.update({
   path: '/searches',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiAgentRunRoute = ApiAgentRunRouteImport.update({
+  id: '/api/agent-run',
+  path: '/api/agent-run',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiColumnsRoute = ApiColumnsRouteImport.update({
+  id: '/api/columns',
+  path: '/api/columns',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEntitiesRoute = ApiEntitiesRouteImport.update({
   id: '/api/entities',
   path: '/api/entities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEntitiesExportRoute = ApiEntitiesExportRouteImport.update({
+  id: '/api/entities-export',
+  path: '/api/entities-export',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRecentSearchesRoute = ApiRecentSearchesRouteImport.update({
@@ -76,7 +94,10 @@ export interface FileRoutesByFullPath {
   '/entities': typeof AppEntitiesRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
+  '/api/agent-run': typeof ApiAgentRunRoute
+  '/api/columns': typeof ApiColumnsRoute
   '/api/entities': typeof ApiEntitiesRoute
+  '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
@@ -86,7 +107,10 @@ export interface FileRoutesByTo {
   '/entities': typeof AppEntitiesRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
+  '/api/agent-run': typeof ApiAgentRunRoute
+  '/api/columns': typeof ApiColumnsRoute
   '/api/entities': typeof ApiEntitiesRoute
+  '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
@@ -99,7 +123,10 @@ export interface FileRoutesById {
   '/_app/entities': typeof AppEntitiesRoute
   '/_app/saved-searches': typeof AppSavedSearchesRoute
   '/_app/searches': typeof AppSearchesRoute
+  '/api/agent-run': typeof ApiAgentRunRoute
+  '/api/columns': typeof ApiColumnsRoute
   '/api/entities': typeof ApiEntitiesRoute
+  '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
@@ -113,7 +140,10 @@ export interface FileRouteTypes {
     | '/entities'
     | '/saved-searches'
     | '/searches'
+    | '/api/agent-run'
+    | '/api/columns'
     | '/api/entities'
+    | '/api/entities-export'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
@@ -123,7 +153,10 @@ export interface FileRouteTypes {
     | '/entities'
     | '/saved-searches'
     | '/searches'
+    | '/api/agent-run'
+    | '/api/columns'
     | '/api/entities'
+    | '/api/entities-export'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
@@ -135,7 +168,10 @@ export interface FileRouteTypes {
     | '/_app/entities'
     | '/_app/saved-searches'
     | '/_app/searches'
+    | '/api/agent-run'
+    | '/api/columns'
     | '/api/entities'
+    | '/api/entities-export'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
@@ -144,7 +180,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  ApiAgentRunRoute: typeof ApiAgentRunRoute
+  ApiColumnsRoute: typeof ApiColumnsRoute
   ApiEntitiesRoute: typeof ApiEntitiesRoute
+  ApiEntitiesExportRoute: typeof ApiEntitiesExportRoute
   ApiRecentSearchesRoute: typeof ApiRecentSearchesRoute
   ApiSavedSearchesRoute: typeof ApiSavedSearchesRoute
   ApiSearchRoute: typeof ApiSearchRoute
@@ -194,11 +233,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSearchesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/agent-run': {
+      id: '/api/agent-run'
+      path: '/api/agent-run'
+      fullPath: '/api/agent-run'
+      preLoaderRoute: typeof ApiAgentRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/columns': {
+      id: '/api/columns'
+      path: '/api/columns'
+      fullPath: '/api/columns'
+      preLoaderRoute: typeof ApiColumnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/entities': {
       id: '/api/entities'
       path: '/api/entities'
       fullPath: '/api/entities'
       preLoaderRoute: typeof ApiEntitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/entities-export': {
+      id: '/api/entities-export'
+      path: '/api/entities-export'
+      fullPath: '/api/entities-export'
+      preLoaderRoute: typeof ApiEntitiesExportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/recent-searches': {
@@ -245,7 +305,10 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  ApiAgentRunRoute: ApiAgentRunRoute,
+  ApiColumnsRoute: ApiColumnsRoute,
   ApiEntitiesRoute: ApiEntitiesRoute,
+  ApiEntitiesExportRoute: ApiEntitiesExportRoute,
   ApiRecentSearchesRoute: ApiRecentSearchesRoute,
   ApiSavedSearchesRoute: ApiSavedSearchesRoute,
   ApiSearchRoute: ApiSearchRoute,

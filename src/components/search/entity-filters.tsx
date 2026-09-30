@@ -1,4 +1,12 @@
-import { ArrowUpDown, CalendarDays, Globe, Tag, X } from 'lucide-react'
+import {
+  ArrowUpDown,
+  CalendarDays,
+  Globe,
+  Hash,
+  Tag,
+  Type,
+  X,
+} from 'lucide-react'
 
 import { DebouncedSearchInput } from '@/components/debounced-search-input'
 import { FilterPicker } from '@/components/filter-picker'
@@ -12,12 +20,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MAX_ENTITY_QUERY_LENGTH, parseEntityFilters } from '@/lib/entities'
 import type {
+  ColumnFilter,
+  ColumnFilters,
   EntityFilters as Filters,
   EntitySite,
   EntitySort,
   EntityTypeCount,
 } from '@/lib/entities'
 import { entityTypeLabel } from '@/lib/labels'
+import type { ColumnDef } from '@/lib/columns'
 
 const siteOptions: Array<{ label: string; value: EntitySite }> = [
   { label: 'LinkedIn', value: 'linkedin' },
@@ -32,12 +43,81 @@ const sortOptions: Array<{ label: string; value: EntitySort }> = [
 interface EntityFiltersProps {
   filters: Filters
   types: Array<EntityTypeCount>
+  columns: Array<ColumnDef>
+  columnPicker?: React.ReactNode
+  actions?: React.ReactNode
   onChange: (filters: Filters) => void
+}
+
+const fieldKey = (columnKey: string) => `col_${columnKey}`
+
+function columnField(column: ColumnDef): FilterField {
+  return column.type === 'number'
+    ? {
+        kind: 'range',
+        key: fieldKey(column.key),
+        label: column.label,
+        icon: Hash,
+        inputType: 'number',
+      }
+    : {
+        kind: 'text',
+        key: fieldKey(column.key),
+        label: column.label,
+        icon: Type,
+        placeholder: `e.g. ${column.label.toLowerCase()}`,
+      }
+}
+
+function columnValues(
+  columns: Array<ColumnDef>,
+  cols: ColumnFilters | undefined,
+): FilterValues {
+  const values: FilterValues = {}
+  for (const column of columns) {
+    const filter = cols?.[column.key]
+    if (!filter) continue
+    const key = fieldKey(column.key)
+    if (filter.contains !== undefined) values[key] = filter.contains
+    if (filter.from !== undefined) values[`${key}From`] = String(filter.from)
+    if (filter.to !== undefined) values[`${key}To`] = String(filter.to)
+  }
+  return values
+}
+
+function nextColumnFilters(
+  columns: Array<ColumnDef>,
+  cols: ColumnFilters | undefined,
+  changes: FilterValues,
+): ColumnFilters {
+  const next: ColumnFilters = { ...cols }
+  for (const column of columns) {
+    const key = fieldKey(column.key)
+    const touched = [key, `${key}From`, `${key}To`].some((name) =>
+      Object.hasOwn(changes, name),
+    )
+    if (!touched) continue
+    const current: ColumnFilter = { ...next[column.key] }
+    if (Object.hasOwn(changes, key)) current.contains = changes[key]
+    if (Object.hasOwn(changes, `${key}From`)) {
+      const value = changes[`${key}From`]
+      current.from = value === undefined ? undefined : Number(value)
+    }
+    if (Object.hasOwn(changes, `${key}To`)) {
+      const value = changes[`${key}To`]
+      current.to = value === undefined ? undefined : Number(value)
+    }
+    next[column.key] = current
+  }
+  return next
 }
 
 export function EntityFilters({
   filters,
   types,
+  columns,
+  columnPicker,
+  actions,
   onChange,
 }: EntityFiltersProps) {
   const fields: Array<FilterField> = [
@@ -65,10 +145,17 @@ export function EntityFilters({
       icon: CalendarDays,
       inputType: 'date',
     },
+    ...columns.map(columnField),
   ]
 
   function handleFilterChange(changes: FilterValues) {
-    onChange(parseEntityFilters({ ...filters, ...changes }))
+    onChange(
+      parseEntityFilters({
+        ...filters,
+        ...changes,
+        cols: nextColumnFilters(columns, filters.cols, changes),
+      }),
+    )
   }
 
   const sort = filters.sort ?? 'recent'
@@ -78,7 +165,8 @@ export function EntityFilters({
     filters.type ||
     filters.site ||
     filters.addedFrom ||
-    filters.addedTo,
+    filters.addedTo ||
+    filters.cols,
   )
 
   return (
@@ -86,21 +174,25 @@ export function EntityFilters({
       <DebouncedSearchInput
         value={filters.q}
         label="Search entities"
-        placeholder="Search by name, URL or details"
+        placeholder="Search by name, URL, or any column value"
         maxLength={MAX_ENTITY_QUERY_LENGTH}
         onChange={(q) => onChange({ ...filters, q })}
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <FilterPicker
-          fields={fields}
-          values={{
-            type: filters.type,
-            site: filters.site,
-            addedFrom: filters.addedFrom,
-            addedTo: filters.addedTo,
-          }}
-          onChange={handleFilterChange}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {columnPicker}
+          <FilterPicker
+            fields={fields}
+            values={{
+              type: filters.type,
+              site: filters.site,
+              addedFrom: filters.addedFrom,
+              addedTo: filters.addedTo,
+              ...columnValues(columns, filters.cols),
+            }}
+            onChange={handleFilterChange}
+          />
+        </div>
         <div className="flex items-center gap-2">
           {hasFilters ? (
             <Button
@@ -137,6 +229,7 @@ export function EntityFilters({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          {actions}
         </div>
       </div>
     </div>

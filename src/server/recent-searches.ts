@@ -1,10 +1,17 @@
 import { count, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { searchResults, searches } from '@/db/schema'
-import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
-import { isResultCount } from '@/lib/pagination'
+import { agentRuns, searchResults, searches } from '@/db/schema'
+import { isAgentRunStatus } from '@/lib/agent'
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_MODE,
+  isSearchCategory,
+  isSearchMode,
+  isSearchLimit,
+} from '@/lib/search'
 import type { RecentSearch } from '@/lib/recent-searches'
+import { loadSearchColumnIds } from '@/server/columns'
 
 const SCAN_LIMIT = 100
 
@@ -18,33 +25,47 @@ export async function listRecentSearches(
       query: searches.query,
       category: searches.category,
       resultLimit: searches.resultLimit,
+      mode: searches.mode,
       createdAt: searches.createdAt,
       results: count(searchResults.id),
+      agentStatus: agentRuns.status,
     })
     .from(searches)
     .leftJoin(searchResults, eq(searchResults.searchId, searches.id))
+    .leftJoin(agentRuns, eq(agentRuns.searchId, searches.id))
     .where(eq(searches.createdByEmail, email))
-    .groupBy(searches.id)
+    .groupBy(searches.id, agentRuns.id)
     .orderBy(desc(searches.createdAt))
     .limit(SCAN_LIMIT)
 
   const seen = new Set<string>()
   const recent: Array<RecentSearch> = []
   for (const row of rows) {
-    const key = `${row.query.toLowerCase()}|${row.category ?? ''}`
-    if (row.results === 0 || seen.has(key)) continue
+    const agentStatus = isAgentRunStatus(row.agentStatus)
+      ? row.agentStatus
+      : null
+    if (agentStatus === null && row.results === 0) continue
+    const key = `${row.mode}|${row.query.toLowerCase()}|${row.category ?? ''}`
+    if (seen.has(key)) continue
     seen.add(key)
     recent.push({
       id: row.id,
       query: row.query,
       category: isSearchCategory(row.category) ? row.category : null,
-      limit: isResultCount(row.resultLimit)
+      limit: isSearchLimit(row.resultLimit)
         ? row.resultLimit
         : DEFAULT_SEARCH_LIMIT,
+      mode: isSearchMode(row.mode) ? row.mode : DEFAULT_SEARCH_MODE,
+      columns: [],
       results: row.results,
+      agentStatus,
       createdAt: row.createdAt.toISOString(),
     })
     if (recent.length === limit) break
   }
-  return recent
+  const columnIds = await loadSearchColumnIds(recent.map((item) => item.id))
+  return recent.map((item) => ({
+    ...item,
+    columns: columnIds.get(item.id) ?? [],
+  }))
 }

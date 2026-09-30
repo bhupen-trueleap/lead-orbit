@@ -8,6 +8,7 @@ import type { FilterField, FilterValues } from '@/components/filter-picker'
 import { SavedSearchesTable } from '@/components/search/saved-searches-table'
 import { TablePagination } from '@/components/table-pagination'
 import { Button } from '@/components/ui/button'
+import { SEARCH_CATEGORIES, categoryLabels } from '@/lib/categories'
 import {
   MAX_SAVED_QUERY_LENGTH,
   deleteSavedSearch,
@@ -45,10 +46,10 @@ const filterFields: Array<FilterField> = [
     key: 'category',
     label: 'Type',
     icon: Tag,
-    options: [
-      { label: 'People', value: 'people' },
-      { label: 'Companies', value: 'company' },
-    ],
+    options: SEARCH_CATEGORIES.map((value) => ({
+      label: categoryLabels[value],
+      value,
+    })),
   },
 ]
 

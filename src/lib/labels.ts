@@ -1,5 +1,3 @@
-import type { SearchCategory } from '@/lib/search'
-
 const entityTypeLabels: Partial<Record<string, { one: string; many: string }>> =
   {
     person: { one: 'Person', many: 'People' },
@@ -16,7 +14,4 @@ export function entityTypeLabel(type: string, form: 'one' | 'many'): string {
   return type.charAt(0).toUpperCase() + type.slice(1)
 }
 
-export const categoryLabels: Record<SearchCategory, string> = {
-  people: 'People',
-  company: 'Companies',
-}
+export { categoryLabels } from '@/lib/categories'

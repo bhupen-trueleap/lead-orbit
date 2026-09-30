@@ -1,8 +1,14 @@
-import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
-import type { SearchCategory, SearchRequest } from '@/lib/search'
-import { isResultCount } from '@/lib/pagination'
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_MODE,
+  isSearchCategory,
+  isSearchMode,
+  isSearchLimit,
+} from '@/lib/search'
+import type { SearchMode, SearchCategory, SearchRequest } from '@/lib/search'
 import type { ResultCount } from '@/lib/pagination'
 import { isRecord } from '@/lib/guards'
+import { parseColumnIds } from '@/lib/columns'
 
 export const MAX_SAVED_QUERY_LENGTH = 200
 
@@ -35,7 +41,9 @@ export interface SavedSearch {
   id: string
   query: string
   category: SearchCategory | null
-  limit: ResultCount
+  limit: number
+  mode: SearchMode
+  columns: Array<string>
   createdAt: string
 }
 
@@ -60,7 +68,9 @@ function parseSavedSearch(value: unknown): SavedSearch | null {
     id: value.id,
     query: value.query,
     category: isSearchCategory(value.category) ? value.category : null,
-    limit: isResultCount(value.limit) ? value.limit : DEFAULT_SEARCH_LIMIT,
+    limit: isSearchLimit(value.limit) ? value.limit : DEFAULT_SEARCH_LIMIT,
+    mode: isSearchMode(value.mode) ? value.mode : DEFAULT_SEARCH_MODE,
+    columns: parseColumnIds(value.columns) ?? [],
     createdAt: value.createdAt,
   }
 }

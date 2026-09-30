@@ -2,26 +2,36 @@ import { and, count, desc, eq, ilike, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { savedSearches } from '@/db/schema'
-import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_MODE,
+  isSearchCategory,
+  isSearchLimit,
+  isSearchMode,
+} from '@/lib/search'
 import type { SearchRequest } from '@/lib/search'
 import type {
   SavedSearchFilters,
   SavedSearchesPage,
 } from '@/lib/saved-searches'
-import { isResultCount } from '@/lib/pagination'
 import type { ResultCount } from '@/lib/pagination'
 import { escapeLike } from '@/server/sql'
+import {
+  loadSavedSearchColumnIds,
+  replaceSavedSearchColumns,
+} from '@/server/columns'
 
 export async function saveSearch(
-  { query, category, limit }: SearchRequest,
+  { query, category, limit, mode, columns: columnIds }: SearchRequest,
   email: string,
 ): Promise<void> {
-  await db
+  const saved = await db
     .insert(savedSearches)
     .values({
       query,
       category: category ?? null,
       resultLimit: limit,
+      mode,
       createdByEmail: email,
     })
     .onConflictDoUpdate({
@@ -30,8 +40,11 @@ export async function saveSearch(
         savedSearches.query,
         savedSearches.category,
       ],
-      set: { resultLimit: limit, createdAt: sql`now()` },
+      set: { resultLimit: limit, mode, createdAt: sql`now()` },
     })
+    .returning({ id: savedSearches.id })
+  const savedId = saved.at(0)?.id
+  if (savedId) await replaceSavedSearchColumns(savedId, columnIds)
 }
 
 export async function listSavedSearches(
@@ -57,14 +70,18 @@ export async function listSavedSearches(
     db.select({ total: count() }).from(savedSearches).where(where),
   ])
 
+  const columnIds = await loadSavedSearchColumnIds(rows.map((row) => row.id))
+
   return {
     savedSearches: rows.map((row) => ({
       id: row.id,
       query: row.query,
       category: isSearchCategory(row.category) ? row.category : null,
-      limit: isResultCount(row.resultLimit)
+      limit: isSearchLimit(row.resultLimit)
         ? row.resultLimit
         : DEFAULT_SEARCH_LIMIT,
+      mode: isSearchMode(row.mode) ? row.mode : DEFAULT_SEARCH_MODE,
+      columns: columnIds.get(row.id) ?? [],
       createdAt: row.createdAt.toISOString(),
     })),
     total: totals.at(0)?.total ?? 0,

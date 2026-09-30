@@ -1,15 +1,25 @@
-import { DEFAULT_SEARCH_LIMIT, isSearchCategory } from '@/lib/search'
-import { isResultCount } from '@/lib/pagination'
-import type { ResultCount } from '@/lib/pagination'
-import type { SearchCategory } from '@/lib/search'
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_MODE,
+  isSearchCategory,
+  isSearchMode,
+  isSearchLimit,
+} from '@/lib/search'
+import type { SearchMode, SearchCategory } from '@/lib/search'
 import { isRecord } from '@/lib/guards'
+import { isAgentRunStatus } from '@/lib/agent'
+import type { AgentRunStatus } from '@/lib/agent'
+import { parseColumnIds } from '@/lib/columns'
 
 export interface RecentSearch {
   id: string
   query: string
   category: SearchCategory | null
-  limit: ResultCount
+  limit: number
+  mode: SearchMode
+  columns: Array<string>
   results: number
+  agentStatus: AgentRunStatus | null
   createdAt: string
 }
 
@@ -27,8 +37,11 @@ function parseRecentSearch(value: unknown): RecentSearch | null {
     id: value.id,
     query: value.query,
     category: isSearchCategory(value.category) ? value.category : null,
-    limit: isResultCount(value.limit) ? value.limit : DEFAULT_SEARCH_LIMIT,
+    limit: isSearchLimit(value.limit) ? value.limit : DEFAULT_SEARCH_LIMIT,
+    mode: isSearchMode(value.mode) ? value.mode : DEFAULT_SEARCH_MODE,
+    columns: parseColumnIds(value.columns) ?? [],
     results: value.results,
+    agentStatus: isAgentRunStatus(value.agentStatus) ? value.agentStatus : null,
     createdAt: value.createdAt,
   }
 }

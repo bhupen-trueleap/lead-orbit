@@ -2,7 +2,7 @@
 
 A web-based intelligent search and discovery platform for people, companies, and other entities using natural-language queries.
 
-A search first checks PostgreSQL for existing data, then uses the Exa API for fresh web discovery and enrichment, stores the results back in PostgreSQL, and streams them to the user.
+Each search calls the Exa API for web discovery and enrichment, stores the results in PostgreSQL, and streams them to the user. Agent mode uses the Exa Agent API for verified lists with optional paid email and phone lookups. Stored data can be browsed and filtered on the Entities page.
 
 ## Stack
 
