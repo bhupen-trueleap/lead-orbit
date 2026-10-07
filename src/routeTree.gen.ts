@@ -21,6 +21,7 @@ import { Route as ApiCollectionExportRouteImport } from './routes/api/collection
 import { Route as ApiCollectionItemsRouteImport } from './routes/api/collection-items'
 import { Route as ApiCollectionsRouteImport } from './routes/api/collections'
 import { Route as ApiColumnsRouteImport } from './routes/api/columns'
+import { Route as ApiDatabaseImportRouteImport } from './routes/api/database-import'
 import { Route as ApiEntitiesRouteImport } from './routes/api/entities'
 import { Route as ApiEntitiesExportRouteImport } from './routes/api/entities-export'
 import { Route as ApiListWorkbookRouteImport } from './routes/api/list-workbook'
@@ -90,6 +91,11 @@ const ApiCollectionsRoute = ApiCollectionsRouteImport.update({
 const ApiColumnsRoute = ApiColumnsRouteImport.update({
   id: '/api/columns',
   path: '/api/columns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDatabaseImportRoute = ApiDatabaseImportRouteImport.update({
+  id: '/api/database-import',
+  path: '/api/database-import',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEntitiesRoute = ApiEntitiesRouteImport.update({
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/api/collection-items': typeof ApiCollectionItemsRoute
   '/api/collections': typeof ApiCollectionsRoute
   '/api/columns': typeof ApiColumnsRoute
+  '/api/database-import': typeof ApiDatabaseImportRoute
   '/api/entities': typeof ApiEntitiesRoute
   '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/list-workbook': typeof ApiListWorkbookRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/api/collection-items': typeof ApiCollectionItemsRoute
   '/api/collections': typeof ApiCollectionsRoute
   '/api/columns': typeof ApiColumnsRoute
+  '/api/database-import': typeof ApiDatabaseImportRoute
   '/api/entities': typeof ApiEntitiesRoute
   '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/list-workbook': typeof ApiListWorkbookRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/api/collection-items': typeof ApiCollectionItemsRoute
   '/api/collections': typeof ApiCollectionsRoute
   '/api/columns': typeof ApiColumnsRoute
+  '/api/database-import': typeof ApiDatabaseImportRoute
   '/api/entities': typeof ApiEntitiesRoute
   '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/list-workbook': typeof ApiListWorkbookRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/api/collection-items'
     | '/api/collections'
     | '/api/columns'
+    | '/api/database-import'
     | '/api/entities'
     | '/api/entities-export'
     | '/api/list-workbook'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/api/collection-items'
     | '/api/collections'
     | '/api/columns'
+    | '/api/database-import'
     | '/api/entities'
     | '/api/entities-export'
     | '/api/list-workbook'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/api/collection-items'
     | '/api/collections'
     | '/api/columns'
+    | '/api/database-import'
     | '/api/entities'
     | '/api/entities-export'
     | '/api/list-workbook'
@@ -315,6 +327,7 @@ export interface RootRouteChildren {
   ApiCollectionItemsRoute: typeof ApiCollectionItemsRoute
   ApiCollectionsRoute: typeof ApiCollectionsRoute
   ApiColumnsRoute: typeof ApiColumnsRoute
+  ApiDatabaseImportRoute: typeof ApiDatabaseImportRoute
   ApiEntitiesRoute: typeof ApiEntitiesRoute
   ApiEntitiesExportRoute: typeof ApiEntitiesExportRoute
   ApiListWorkbookRoute: typeof ApiListWorkbookRoute
@@ -409,6 +422,13 @@ declare module '@tanstack/react-router' {
       path: '/api/columns'
       fullPath: '/api/columns'
       preLoaderRoute: typeof ApiColumnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/database-import': {
+      id: '/api/database-import'
+      path: '/api/database-import'
+      fullPath: '/api/database-import'
+      preLoaderRoute: typeof ApiDatabaseImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/entities': {
@@ -539,6 +559,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCollectionItemsRoute: ApiCollectionItemsRoute,
   ApiCollectionsRoute: ApiCollectionsRoute,
   ApiColumnsRoute: ApiColumnsRoute,
+  ApiDatabaseImportRoute: ApiDatabaseImportRoute,
   ApiEntitiesRoute: ApiEntitiesRoute,
   ApiEntitiesExportRoute: ApiEntitiesExportRoute,
   ApiListWorkbookRoute: ApiListWorkbookRoute,

@@ -5,6 +5,7 @@ import type { ComponentProps, ComponentType } from 'react'
 
 import { UserMenu } from '@/components/layout/user-menu'
 import { ListSearchPanel } from '@/components/lists/list-search-panel'
+import { WorkbookFileActions } from '@/components/lists/workbook-file-actions'
 import type ListWorkbookComponent from '@/components/lists/list-workbook'
 import type {
   SaveState,
@@ -47,6 +48,13 @@ function ListEditor() {
   const [mounted, setMounted] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [handle, setHandle] = useState<WorkbookHandle | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(null), 6000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   useEffect(() => setMounted(true), [])
 
@@ -103,7 +111,14 @@ function ListEditor() {
               {list.ownerEmail} · View only
             </span>
           ) : null}
-          {canEdit ? (
+          {notice ? (
+            <span
+              aria-live="polite"
+              className="min-w-0 truncate text-xs text-muted-foreground"
+            >
+              {notice}
+            </span>
+          ) : canEdit ? (
             <span
               aria-live="polite"
               className={
@@ -116,6 +131,14 @@ function ListEditor() {
             </span>
           ) : null}
         </div>
+        {list ? (
+          <WorkbookFileActions
+            handle={handle}
+            canEdit={canEdit}
+            listName={list.name}
+            onNotice={setNotice}
+          />
+        ) : null}
         {list ? (
           <Button
             type="button"

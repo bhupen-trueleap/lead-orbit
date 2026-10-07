@@ -174,7 +174,7 @@ export function coerceValue(
   return null
 }
 
-function typedFields(column: ColumnDef, value: FieldValue) {
+export function typedFields(column: ColumnDef, value: FieldValue) {
   return {
     valueText:
       column.type === 'text' && typeof value === 'string' ? value : null,

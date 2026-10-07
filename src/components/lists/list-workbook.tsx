@@ -7,12 +7,13 @@ import {
   defaultTheme,
   mergeLocales,
 } from '@univerjs/presets'
-import type { IWorkbookData } from '@univerjs/presets'
+import type { IWorkbookData, IWorksheetData } from '@univerjs/presets'
 import { UniverSheetsCorePreset } from '@univerjs/preset-sheets-core'
 import sheetsCoreEnUS from '@univerjs/preset-sheets-core/locales/en-US'
 import { useEffect, useRef } from 'react'
 
 import { isRecord } from '@/lib/guards'
+import type { CellInput, ImportTable } from '@/lib/database-import'
 import { isWorkbookData } from '@/lib/lists'
 
 export type SaveState = 'saved' | 'pending' | 'saving' | 'error'
@@ -26,7 +27,13 @@ export interface AppendResult {
 }
 
 export interface WorkbookHandle {
+  getSnapshot: () => { workbook: IWorkbookData; activeSheetId: string }
+  hasContent: () => boolean
+  replaceSheets: (
+    sheets: Array<{ name: string; sheet: Partial<IWorksheetData> }>,
+  ) => Array<string>
   getHeaders: () => Array<string>
+  getActiveTable: () => ImportTable
   appendRows: (
     rows: Array<Record<string, SheetValue>>,
     dedupeHeader?: string,
@@ -201,8 +208,85 @@ export default function ListWorkbook({
       return headers
     }
 
+    function uniqueSheetName(wanted: string, taken: Set<string>): string {
+      const base = wanted.trim().slice(0, 31) || 'Imported'
+      let candidate = base
+      for (let copy = 2; taken.has(normalize(candidate)); copy += 1) {
+        const suffix = ` (${copy})`
+        candidate = `${base.slice(0, 31 - suffix.length)}${suffix}`
+      }
+      taken.add(normalize(candidate))
+      return candidate
+    }
+
     callbacks.current.onReady?.({
+      getSnapshot: () => ({
+        workbook: fWorkbook.save(),
+        activeSheetId: fWorkbook.getActiveSheet().getSheetId(),
+      }),
+      hasContent: () =>
+        fWorkbook.getSheets().length > 1 ||
+        fWorkbook.getSheets().some((sheet) => {
+          const lastRow = sheet.getLastRow()
+          if (lastRow < 1) return false
+          const width = sheet.getLastColumn() + 1
+          return sheet
+            .getRange(1, 0, lastRow, width)
+            .getValues()
+            .some((row) =>
+              row.some(
+                (value) =>
+                  value !== null && value !== undefined && value !== '',
+              ),
+            )
+        }),
+      replaceSheets: (sheets) => {
+        const previous = fWorkbook.getSheets()
+        const temporaryNames = new Set(
+          previous.map((sheet) => normalize(sheet.getSheetName())),
+        )
+        const finalNames = new Set<string>()
+        const inserted = sheets.map((imported, index) => {
+          const temporary = uniqueSheetName(
+            `Importing ${index + 1}`,
+            temporaryNames,
+          )
+          return {
+            worksheet: fWorkbook.insertSheet(temporary, {
+              sheet: { ...imported.sheet, name: temporary },
+            }),
+            title: uniqueSheetName(imported.name, finalNames),
+          }
+        })
+        const first = inserted.at(0)
+        if (!first) return []
+        for (const sheet of previous) fWorkbook.deleteSheet(sheet)
+        for (const { worksheet, title } of inserted) worksheet.setName(title)
+        fWorkbook.setActiveSheet(first.worksheet)
+        return inserted.map(({ title }) => title)
+      },
       getHeaders: readHeaders,
+      getActiveTable: () => {
+        const sheet = fWorkbook.getActiveSheet()
+        const height = sheet.getLastRow() + 1
+        const width = sheet.getLastColumn() + 1
+        const matrix = sheet.getRange(0, 0, height, width).getValues()
+        const toCell = (value: unknown): CellInput =>
+          typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean'
+            ? value
+            : null
+        const [first = [], ...rest] = matrix
+        return {
+          name: sheet.getSheetName(),
+          headers: first.map((value) => {
+            const cell = toCell(value)
+            return cell === null ? '' : String(cell).trim()
+          }),
+          rows: rest.map((row) => row.map(toCell)),
+        }
+      },
       appendRows: (rows, dedupeHeader) => {
         const sheet = fWorkbook.getActiveSheet()
         const headers = readHeaders()

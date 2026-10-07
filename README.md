@@ -43,8 +43,10 @@ The app builds for Cloudflare Workers through `@cloudflare/vite-plugin` (see `wr
 
 In the Cloudflare dashboard (Workers → lead-orbit → Settings → Build):
 
-- Build command: `pnpm run build`
+- Build command: `pnpm run build:deploy` (runs `pnpm db:migrate`, then `vite build`, so the database is migrated before each deploy)
 - Deploy command: `npx wrangler deploy`
+
+Set `DATABASE_URL` as a build variable too (Settings → Build → Variables and secrets), since migrations run during the build. Use the production branch only for this build command; preview branches should use `pnpm run build` so they never migrate production.
 
 Set these as Worker secrets: `DATABASE_URL`, `EXA_API_KEY`, `ADMIN_EMAILS`, `ALLOWED_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 
@@ -52,14 +54,15 @@ Workers cannot share a database connection between requests, so each request get
 
 ## Scripts
 
-| Command        | Description                       |
-| -------------- | --------------------------------- |
-| `pnpm dev`     | Start the dev server on port 3000 |
-| `pnpm build`   | Production build                  |
-| `pnpm preview` | Preview the production build      |
-| `pnpm lint`    | Run ESLint                        |
-| `pnpm check`   | Check formatting with Prettier    |
-| `pnpm format`  | Format with Prettier, then ESLint |
+| Command             | Description                                              |
+| ------------------- | -------------------------------------------------------- |
+| `pnpm dev`          | Start the dev server on port 3000                        |
+| `pnpm build`        | Production build                                         |
+| `pnpm build:deploy` | Run database migrations, then build (used by Cloudflare) |
+| `pnpm preview`      | Preview the production build                             |
+| `pnpm lint`         | Run ESLint                                               |
+| `pnpm check`        | Check formatting with Prettier                           |
+| `pnpm format`       | Format with Prettier, then ESLint                        |
 
 ## Project structure
 

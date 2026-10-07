@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { DatabaseImportButton } from '@/components/database-import-button'
 import { EntityFilters } from '@/components/search/entity-filters'
 import { ColumnPicker } from '@/components/search/column-picker'
 import { EntityTable } from '@/components/search/entity-table'
@@ -60,6 +61,8 @@ function Entities() {
   const [data, setData] = useState<EntitiesPage | null>(null)
   const [state, setState] = useState<LoadState>('loading')
   const [columns, setColumns] = useState<Array<ColumnDef>>([])
+  const [notice, setNotice] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
   const colsKey = cols ? JSON.stringify(cols) : ''
 
   useEffect(() => {
@@ -146,7 +149,7 @@ function Entities() {
         if (!controller.signal.aborted) setState('error')
       })
     return () => controller.abort()
-  }, [page, pageSize, filters])
+  }, [page, pageSize, filters, reloadKey])
 
   const isLoading = state === 'loading'
   const lastPage = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1
@@ -175,25 +178,36 @@ function Entities() {
         columns={tableColumns}
         onChange={handleFiltersChange}
         actions={
-          total > 0 ? (
-            <Button
-              variant="outline"
-              size="sm"
-              nativeButton={false}
-              render={
-                <a
-                  href={entitiesExportUrl(
-                    filters,
-                    tableColumns.map((column) => column.key),
-                  )}
-                  download
-                />
-              }
-            >
-              <Download />
-              Export CSV
-            </Button>
-          ) : null
+          <>
+            <DatabaseImportButton
+              onError={setNotice}
+              onImported={(counts) => {
+                setNotice(
+                  `Imported: ${counts.created} new, ${counts.filled} filled in, ${counts.unchanged} unchanged.`,
+                )
+                setReloadKey((key) => key + 1)
+              }}
+            />
+            {total > 0 ? (
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <a
+                    href={entitiesExportUrl(
+                      filters,
+                      tableColumns.map((column) => column.key),
+                    )}
+                    download
+                  />
+                }
+              >
+                <Download />
+                Export CSV
+              </Button>
+            ) : null}
+          </>
         }
         columnPicker={
           <ColumnPicker
@@ -207,6 +221,7 @@ function Entities() {
       />
 
       <div aria-live="polite" className="text-sm text-muted-foreground">
+        {notice ? <p>{notice}</p> : null}
         {state === 'error' ? 'Could not load the database.' : null}
         {state === 'ready' && total === 0
           ? hasFilters
