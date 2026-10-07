@@ -4,4 +4,5 @@ packages:
 allowBuilds:
   esbuild: true
   lightningcss: true
+  protobufjs: false
   unrs-resolver: true

@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/search')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const email = getRequestEmail(request)
+        const email = await getRequestEmail(request)
         if (!email) return new Response('Unauthorized', { status: 401 })
 
         const body: unknown = await request.json().catch(() => null)

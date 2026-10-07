@@ -10,31 +10,46 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as SheetRouteImport } from './routes/_sheet'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppCollectionsRouteImport } from './routes/_app/collections'
 import { Route as AppEntitiesRouteImport } from './routes/_app/entities'
 import { Route as AppSavedSearchesRouteImport } from './routes/_app/saved-searches'
 import { Route as AppSearchesRouteImport } from './routes/_app/searches'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent-run'
+import { Route as ApiCollectionExportRouteImport } from './routes/api/collection-export'
+import { Route as ApiCollectionItemsRouteImport } from './routes/api/collection-items'
+import { Route as ApiCollectionsRouteImport } from './routes/api/collections'
 import { Route as ApiColumnsRouteImport } from './routes/api/columns'
 import { Route as ApiEntitiesRouteImport } from './routes/api/entities'
 import { Route as ApiEntitiesExportRouteImport } from './routes/api/entities-export'
+import { Route as ApiListWorkbookRouteImport } from './routes/api/list-workbook'
+import { Route as ApiListsRouteImport } from './routes/api/lists'
 import { Route as ApiRecentSearchesRouteImport } from './routes/api/recent-searches'
 import { Route as ApiSavedSearchesRouteImport } from './routes/api/saved-searches'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
+import { Route as AppCollectionsIndexRouteImport } from './routes/_app/collections/index'
+import { Route as AppCollectionsCollectionIdRouteImport } from './routes/_app/collections/$collectionId'
+import { Route as AppListsIndexRouteImport } from './routes/_app/lists/index'
+import { Route as SheetListsListIdRouteImport } from './routes/_sheet/lists/$listId'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SheetRoute = SheetRouteImport.update({
+  id: '/_sheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCollectionsRoute = AppCollectionsRouteImport.update({
-  id: '/collections',
-  path: '/collections',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEntitiesRoute = AppEntitiesRouteImport.update({
@@ -57,6 +72,21 @@ const ApiAgentRunRoute = ApiAgentRunRouteImport.update({
   path: '/api/agent-run',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCollectionExportRoute = ApiCollectionExportRouteImport.update({
+  id: '/api/collection-export',
+  path: '/api/collection-export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCollectionItemsRoute = ApiCollectionItemsRouteImport.update({
+  id: '/api/collection-items',
+  path: '/api/collection-items',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCollectionsRoute = ApiCollectionsRouteImport.update({
+  id: '/api/collections',
+  path: '/api/collections',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiColumnsRoute = ApiColumnsRouteImport.update({
   id: '/api/columns',
   path: '/api/columns',
@@ -70,6 +100,16 @@ const ApiEntitiesRoute = ApiEntitiesRouteImport.update({
 const ApiEntitiesExportRoute = ApiEntitiesExportRouteImport.update({
   id: '/api/entities-export',
   path: '/api/entities-export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiListWorkbookRoute = ApiListWorkbookRouteImport.update({
+  id: '/api/list-workbook',
+  path: '/api/list-workbook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiListsRoute = ApiListsRouteImport.update({
+  id: '/api/lists',
+  path: '/api/lists',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRecentSearchesRoute = ApiRecentSearchesRouteImport.update({
@@ -87,106 +127,202 @@ const ApiSearchRoute = ApiSearchRouteImport.update({
   path: '/api/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppCollectionsIndexRoute = AppCollectionsIndexRouteImport.update({
+  id: '/collections/',
+  path: '/collections/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCollectionsCollectionIdRoute =
+  AppCollectionsCollectionIdRouteImport.update({
+    id: '/collections/$collectionId',
+    path: '/collections/$collectionId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppListsIndexRoute = AppListsIndexRouteImport.update({
+  id: '/lists/',
+  path: '/lists/',
+  getParentRoute: () => AppRoute,
+} as any)
+const SheetListsListIdRoute = SheetListsListIdRouteImport.update({
+  id: '/lists/$listId',
+  path: '/lists/$listId',
+  getParentRoute: () => SheetRoute,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/collections': typeof AppCollectionsRoute
+  '/login': typeof LoginRoute
   '/entities': typeof AppEntitiesRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
   '/api/agent-run': typeof ApiAgentRunRoute
+  '/api/collection-export': typeof ApiCollectionExportRoute
+  '/api/collection-items': typeof ApiCollectionItemsRoute
+  '/api/collections': typeof ApiCollectionsRoute
   '/api/columns': typeof ApiColumnsRoute
   '/api/entities': typeof ApiEntitiesRoute
   '/api/entities-export': typeof ApiEntitiesExportRoute
+  '/api/list-workbook': typeof ApiListWorkbookRoute
+  '/api/lists': typeof ApiListsRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
+  '/collections/$collectionId': typeof AppCollectionsCollectionIdRoute
+  '/lists/$listId': typeof SheetListsListIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/collections/': typeof AppCollectionsIndexRoute
+  '/lists/': typeof AppListsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/collections': typeof AppCollectionsRoute
+  '/': typeof AppIndexRoute
+  '/login': typeof LoginRoute
   '/entities': typeof AppEntitiesRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
   '/api/agent-run': typeof ApiAgentRunRoute
+  '/api/collection-export': typeof ApiCollectionExportRoute
+  '/api/collection-items': typeof ApiCollectionItemsRoute
+  '/api/collections': typeof ApiCollectionsRoute
   '/api/columns': typeof ApiColumnsRoute
   '/api/entities': typeof ApiEntitiesRoute
   '/api/entities-export': typeof ApiEntitiesExportRoute
+  '/api/list-workbook': typeof ApiListWorkbookRoute
+  '/api/lists': typeof ApiListsRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
-  '/': typeof AppIndexRoute
+  '/collections/$collectionId': typeof AppCollectionsCollectionIdRoute
+  '/lists/$listId': typeof SheetListsListIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/collections': typeof AppCollectionsIndexRoute
+  '/lists': typeof AppListsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
-  '/_app/collections': typeof AppCollectionsRoute
+  '/_sheet': typeof SheetRouteWithChildren
+  '/login': typeof LoginRoute
   '/_app/entities': typeof AppEntitiesRoute
   '/_app/saved-searches': typeof AppSavedSearchesRoute
   '/_app/searches': typeof AppSearchesRoute
   '/api/agent-run': typeof ApiAgentRunRoute
+  '/api/collection-export': typeof ApiCollectionExportRoute
+  '/api/collection-items': typeof ApiCollectionItemsRoute
+  '/api/collections': typeof ApiCollectionsRoute
   '/api/columns': typeof ApiColumnsRoute
   '/api/entities': typeof ApiEntitiesRoute
   '/api/entities-export': typeof ApiEntitiesExportRoute
+  '/api/list-workbook': typeof ApiListWorkbookRoute
+  '/api/lists': typeof ApiListsRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/collections/$collectionId': typeof AppCollectionsCollectionIdRoute
+  '/_sheet/lists/$listId': typeof SheetListsListIdRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_app/collections/': typeof AppCollectionsIndexRoute
+  '/_app/lists/': typeof AppListsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/collections'
+    | '/login'
     | '/entities'
     | '/saved-searches'
     | '/searches'
     | '/api/agent-run'
+    | '/api/collection-export'
+    | '/api/collection-items'
+    | '/api/collections'
     | '/api/columns'
     | '/api/entities'
     | '/api/entities-export'
+    | '/api/list-workbook'
+    | '/api/lists'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
+    | '/collections/$collectionId'
+    | '/lists/$listId'
+    | '/api/auth/$'
+    | '/collections/'
+    | '/lists/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/collections'
+    | '/'
+    | '/login'
     | '/entities'
     | '/saved-searches'
     | '/searches'
     | '/api/agent-run'
+    | '/api/collection-export'
+    | '/api/collection-items'
+    | '/api/collections'
     | '/api/columns'
     | '/api/entities'
     | '/api/entities-export'
+    | '/api/list-workbook'
+    | '/api/lists'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
-    | '/'
+    | '/collections/$collectionId'
+    | '/lists/$listId'
+    | '/api/auth/$'
+    | '/collections'
+    | '/lists'
   id:
     | '__root__'
     | '/_app'
-    | '/_app/collections'
+    | '/_sheet'
+    | '/login'
     | '/_app/entities'
     | '/_app/saved-searches'
     | '/_app/searches'
     | '/api/agent-run'
+    | '/api/collection-export'
+    | '/api/collection-items'
+    | '/api/collections'
     | '/api/columns'
     | '/api/entities'
     | '/api/entities-export'
+    | '/api/list-workbook'
+    | '/api/lists'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
     | '/_app/'
+    | '/_app/collections/$collectionId'
+    | '/_sheet/lists/$listId'
+    | '/api/auth/$'
+    | '/_app/collections/'
+    | '/_app/lists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  SheetRoute: typeof SheetRouteWithChildren
+  LoginRoute: typeof LoginRoute
   ApiAgentRunRoute: typeof ApiAgentRunRoute
+  ApiCollectionExportRoute: typeof ApiCollectionExportRoute
+  ApiCollectionItemsRoute: typeof ApiCollectionItemsRoute
+  ApiCollectionsRoute: typeof ApiCollectionsRoute
   ApiColumnsRoute: typeof ApiColumnsRoute
   ApiEntitiesRoute: typeof ApiEntitiesRoute
   ApiEntitiesExportRoute: typeof ApiEntitiesExportRoute
+  ApiListWorkbookRoute: typeof ApiListWorkbookRoute
+  ApiListsRoute: typeof ApiListsRoute
   ApiRecentSearchesRoute: typeof ApiRecentSearchesRoute
   ApiSavedSearchesRoute: typeof ApiSavedSearchesRoute
   ApiSearchRoute: typeof ApiSearchRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -198,18 +334,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_sheet': {
+      id: '/_sheet'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof SheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/': {
       id: '/_app/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/collections': {
-      id: '/_app/collections'
-      path: '/collections'
-      fullPath: '/collections'
-      preLoaderRoute: typeof AppCollectionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/entities': {
@@ -240,6 +383,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAgentRunRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/collection-export': {
+      id: '/api/collection-export'
+      path: '/api/collection-export'
+      fullPath: '/api/collection-export'
+      preLoaderRoute: typeof ApiCollectionExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/collection-items': {
+      id: '/api/collection-items'
+      path: '/api/collection-items'
+      fullPath: '/api/collection-items'
+      preLoaderRoute: typeof ApiCollectionItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/collections': {
+      id: '/api/collections'
+      path: '/api/collections'
+      fullPath: '/api/collections'
+      preLoaderRoute: typeof ApiCollectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/columns': {
       id: '/api/columns'
       path: '/api/columns'
@@ -259,6 +423,20 @@ declare module '@tanstack/react-router' {
       path: '/api/entities-export'
       fullPath: '/api/entities-export'
       preLoaderRoute: typeof ApiEntitiesExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/list-workbook': {
+      id: '/api/list-workbook'
+      path: '/api/list-workbook'
+      fullPath: '/api/list-workbook'
+      preLoaderRoute: typeof ApiListWorkbookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/lists': {
+      id: '/api/lists'
+      path: '/api/lists'
+      fullPath: '/api/lists'
+      preLoaderRoute: typeof ApiListsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/recent-searches': {
@@ -282,36 +460,93 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/collections/': {
+      id: '/_app/collections/'
+      path: '/collections'
+      fullPath: '/collections/'
+      preLoaderRoute: typeof AppCollectionsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/collections/$collectionId': {
+      id: '/_app/collections/$collectionId'
+      path: '/collections/$collectionId'
+      fullPath: '/collections/$collectionId'
+      preLoaderRoute: typeof AppCollectionsCollectionIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/lists/': {
+      id: '/_app/lists/'
+      path: '/lists'
+      fullPath: '/lists/'
+      preLoaderRoute: typeof AppListsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_sheet/lists/$listId': {
+      id: '/_sheet/lists/$listId'
+      path: '/lists/$listId'
+      fullPath: '/lists/$listId'
+      preLoaderRoute: typeof SheetListsListIdRouteImport
+      parentRoute: typeof SheetRoute
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AppRouteChildren {
-  AppCollectionsRoute: typeof AppCollectionsRoute
   AppEntitiesRoute: typeof AppEntitiesRoute
   AppSavedSearchesRoute: typeof AppSavedSearchesRoute
   AppSearchesRoute: typeof AppSearchesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppCollectionsCollectionIdRoute: typeof AppCollectionsCollectionIdRoute
+  AppCollectionsIndexRoute: typeof AppCollectionsIndexRoute
+  AppListsIndexRoute: typeof AppListsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppCollectionsRoute: AppCollectionsRoute,
   AppEntitiesRoute: AppEntitiesRoute,
   AppSavedSearchesRoute: AppSavedSearchesRoute,
   AppSearchesRoute: AppSearchesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppCollectionsCollectionIdRoute: AppCollectionsCollectionIdRoute,
+  AppCollectionsIndexRoute: AppCollectionsIndexRoute,
+  AppListsIndexRoute: AppListsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface SheetRouteChildren {
+  SheetListsListIdRoute: typeof SheetListsListIdRoute
+}
+
+const SheetRouteChildren: SheetRouteChildren = {
+  SheetListsListIdRoute: SheetListsListIdRoute,
+}
+
+const SheetRouteWithChildren = SheetRoute._addFileChildren(SheetRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  SheetRoute: SheetRouteWithChildren,
+  LoginRoute: LoginRoute,
   ApiAgentRunRoute: ApiAgentRunRoute,
+  ApiCollectionExportRoute: ApiCollectionExportRoute,
+  ApiCollectionItemsRoute: ApiCollectionItemsRoute,
+  ApiCollectionsRoute: ApiCollectionsRoute,
   ApiColumnsRoute: ApiColumnsRoute,
   ApiEntitiesRoute: ApiEntitiesRoute,
   ApiEntitiesExportRoute: ApiEntitiesExportRoute,
+  ApiListWorkbookRoute: ApiListWorkbookRoute,
+  ApiListsRoute: ApiListsRoute,
   ApiRecentSearchesRoute: ApiRecentSearchesRoute,
   ApiSavedSearchesRoute: ApiSavedSearchesRoute,
   ApiSearchRoute: ApiSearchRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,4 +1,10 @@
-import { Clock, FolderOpen, LayoutDashboard, Search, Users } from 'lucide-react'
+import {
+  Database,
+  FolderOpen,
+  LayoutDashboard,
+  List,
+  Search,
+} from 'lucide-react'
 import type { LinkProps } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
 
@@ -12,14 +18,20 @@ export interface NavItem {
   label: string
   to: LinkProps['to']
   icon: LucideIcon
+  adminOnly?: boolean
 }
 
 export const navItems: Array<NavItem> = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard },
-  { label: 'Searches', to: '/searches', icon: Search },
-  { label: 'Entities', to: '/entities', icon: Users },
-  { label: 'Collections', to: '/collections', icon: FolderOpen },
-  { label: 'Saved Searches', to: '/saved-searches', icon: Clock },
+  { label: 'Dashboard', to: '/', icon: LayoutDashboard, adminOnly: true },
+  { label: 'Searches', to: '/searches', icon: Search, adminOnly: true },
+  { label: 'Database', to: '/entities', icon: Database, adminOnly: true },
+  {
+    label: 'Collections',
+    to: '/collections',
+    icon: FolderOpen,
+    adminOnly: true,
+  },
+  { label: 'Lists', to: '/lists', icon: List },
 ]
 
 export interface ExamplePrompt {

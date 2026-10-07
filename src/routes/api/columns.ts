@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/columns')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!getRequestEmail(request)) {
+        if (!(await getRequestEmail(request))) {
           return new Response('Unauthorized', { status: 401 })
         }
         return Response.json(
@@ -17,7 +17,7 @@ export const Route = createFileRoute('/api/columns')({
         )
       },
       POST: async ({ request }) => {
-        const email = getRequestEmail(request)
+        const email = await getRequestEmail(request)
         if (!email) return new Response('Unauthorized', { status: 401 })
 
         const draft = parseColumnDraft(await request.json().catch(() => null))

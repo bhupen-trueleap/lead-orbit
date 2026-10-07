@@ -1,7 +1,29 @@
-export function getRequestEmail(request: Request): string | null {
-  const header = request.headers.get('cf-access-authenticated-user-email')
-  const email = (header ?? process.env.DEV_USER_EMAIL ?? '')
-    .trim()
-    .toLowerCase()
-  return email === '' ? null : email
+import type { Viewer } from '@/lib/viewer'
+import { isAllowedEmail, roleFor } from '@/server/access'
+import { auth } from '@/server/better-auth'
+
+export async function viewerFromHeaders(
+  headers: Headers,
+): Promise<Viewer | null> {
+  const current = await auth.api.getSession({ headers })
+  const email = current?.user.email.toLowerCase()
+  if (!email || !isAllowedEmail(email)) return null
+  return { email, role: roleFor(email) }
+}
+
+export async function getRequestViewer(
+  request: Request,
+): Promise<Viewer | null> {
+  return viewerFromHeaders(request.headers)
+}
+
+export async function getRequestEmail(
+  request: Request,
+): Promise<string | null> {
+  return (await getRequestViewer(request))?.email ?? null
+}
+
+export async function getAdminEmail(request: Request): Promise<string | null> {
+  const viewer = await getRequestViewer(request)
+  return viewer?.role === 'admin' ? viewer.email : null
 }

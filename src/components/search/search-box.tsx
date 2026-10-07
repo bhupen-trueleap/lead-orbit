@@ -55,6 +55,7 @@ interface SearchBoxProps {
   isSearching?: boolean
   confirmAgentRuns?: boolean
   confirmOnLoad?: boolean
+  keepColumnsOnTypeChange?: boolean
   onSearch: (request: SearchRequest) => void
 }
 
@@ -95,6 +96,7 @@ export function SearchBox({
   isSearching = false,
   confirmAgentRuns = true,
   confirmOnLoad = false,
+  keepColumnsOnTypeChange = false,
   onSearch,
 }: SearchBoxProps) {
   const [category, setCategory] = useState<SearchCategory | undefined>(
@@ -155,6 +157,7 @@ export function SearchBox({
 
   function changeCategory(next: SearchCategory | undefined) {
     setCategory(next)
+    if (keepColumnsOnTypeChange) return
     setSelectedColumns(
       presetColumnsFor(columns, next).map((column) => column.id),
     )

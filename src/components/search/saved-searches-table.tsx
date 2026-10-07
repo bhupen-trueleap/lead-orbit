@@ -41,7 +41,7 @@ export function SavedSearchesTable({
           {savedSearches.map(
             ({ id, query, category, limit, mode, columns, createdAt }) => (
               <TableRow key={id} className="h-14">
-                <TableCell className="max-w-sm truncate border-r font-medium">
+                <TableCell className="max-w-xl truncate border-r font-medium">
                   {query}
                 </TableCell>
                 <TableCell className="border-r text-muted-foreground">

@@ -25,9 +25,9 @@ import { entityRowFields, toSearchEntity } from '@/server/entity-rows'
 import { escapeLike } from '@/server/sql'
 import type { ResultCount } from '@/lib/pagination'
 
-const LINKEDIN_URL = '%linkedin.com/%'
+export const LINKEDIN_URL = '%linkedin.com/%'
 
-function startOfDay(date: string, offsetDays = 0): Date {
+export function startOfDay(date: string, offsetDays = 0): Date {
   const value = new Date(`${date}T00:00:00Z`)
   value.setUTCDate(value.getUTCDate() + offsetDays)
   return value
@@ -67,7 +67,7 @@ function columnCondition(
   )
 }
 
-function buildWhere(
+export function buildEntityWhere(
   { q, type, site, addedFrom, addedTo, cols }: EntityFilters,
   filterColumns: Array<ColumnDef>,
 ): SQL | undefined {
@@ -130,7 +130,7 @@ export async function listEntities(
   const filterColumns = entityColumns.filter(
     (column) => filters.cols?.[column.key] !== undefined,
   )
-  const where = buildWhere(filters, filterColumns)
+  const where = buildEntityWhere(filters, filterColumns)
   const orderBy =
     filters.sort === 'name'
       ? [asc(sql`lower(${entities.name})`), asc(entities.id)]

@@ -260,7 +260,7 @@ export function ColumnPicker({
       >
         <Columns3 />
         {label}
-        <span className="rounded-sm bg-muted px-1.5 text-xs text-muted-foreground">
+        <span className="rounded-sm bg-muted px-1.5 text-xs text-foreground">
           {checklist.selectedIds.length}
         </span>
       </PopoverTrigger>

@@ -35,17 +35,14 @@ const siteOptions: Array<{ label: string; value: EntitySite }> = [
   { label: 'Other sites', value: 'other' },
 ]
 
-const sortOptions: Array<{ label: string; value: EntitySort }> = [
-  { label: 'Recent', value: 'recent' },
-  { label: 'Name A–Z', value: 'name' },
-]
-
 interface EntityFiltersProps {
   filters: Filters
   types: Array<EntityTypeCount>
   columns: Array<ColumnDef>
   columnPicker?: React.ReactNode
   actions?: React.ReactNode
+  searchLabel?: string
+  recentLabel?: string
   onChange: (filters: Filters) => void
 }
 
@@ -118,6 +115,8 @@ export function EntityFilters({
   columns,
   columnPicker,
   actions,
+  searchLabel = 'Search the database',
+  recentLabel = 'Recent',
   onChange,
 }: EntityFiltersProps) {
   const fields: Array<FilterField> = [
@@ -158,6 +157,10 @@ export function EntityFilters({
     )
   }
 
+  const sortOptions: Array<{ label: string; value: EntitySort }> = [
+    { label: recentLabel, value: 'recent' },
+    { label: 'Name A–Z', value: 'name' },
+  ]
   const sort = filters.sort ?? 'recent'
   const sortLabel = sortOptions.find((option) => option.value === sort)?.label
   const hasFilters = Boolean(
@@ -173,7 +176,7 @@ export function EntityFilters({
     <div className="space-y-3">
       <DebouncedSearchInput
         value={filters.q}
-        label="Search entities"
+        label={searchLabel}
         placeholder="Search by name, URL, or any column value"
         maxLength={MAX_ENTITY_QUERY_LENGTH}
         onChange={(q) => onChange({ ...filters, q })}
@@ -212,7 +215,7 @@ export function EntityFilters({
               <ArrowUpDown />
               {sortLabel}
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-44">
               {sortOptions.map((option) => (
                 <DropdownMenuItem
                   key={option.value}

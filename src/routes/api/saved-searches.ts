@@ -6,7 +6,7 @@ import {
   parseSavedSearchFilters,
 } from '@/lib/saved-searches'
 import { parseSearchRequest } from '@/lib/search'
-import { getRequestEmail } from '@/server/auth'
+import { getAdminEmail } from '@/server/auth'
 import {
   deleteSavedSearch,
   listSavedSearches,
@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/saved-searches')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const email = getRequestEmail(request)
+        const email = await getAdminEmail(request)
         if (!email) return new Response('Unauthorized', { status: 401 })
 
         const params = new URL(request.url).searchParams
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/api/saved-searches')({
         )
       },
       POST: async ({ request }) => {
-        const email = getRequestEmail(request)
+        const email = await getAdminEmail(request)
         if (!email) return new Response('Unauthorized', { status: 401 })
 
         const parsed = parseSearchRequest(
@@ -51,7 +51,7 @@ export const Route = createFileRoute('/api/saved-searches')({
         return new Response(null, { status: 204 })
       },
       DELETE: async ({ request }) => {
-        const email = getRequestEmail(request)
+        const email = await getAdminEmail(request)
         if (!email) return new Response('Unauthorized', { status: 401 })
 
         const id = parseDeleteRequest(await request.json().catch(() => null))

@@ -80,3 +80,17 @@ export function toSearchEntity(row: EntityRow): SearchEntity {
     evidence: {},
   }
 }
+
+export function pageRow(page: typeof webPages.$inferSelect): SearchEntity {
+  return {
+    id: page.id,
+    name: page.title ?? page.url,
+    url: page.url,
+    type: 'page',
+    role: page.author,
+    location: null,
+    highlight: page.highlights.at(0) ?? null,
+    values: {},
+    evidence: {},
+  }
+}

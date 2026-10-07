@@ -139,7 +139,7 @@ export function parseEntityFilters(
   }
 }
 
-function isEntityTypeCount(value: unknown): value is EntityTypeCount {
+export function isEntityTypeCount(value: unknown): value is EntityTypeCount {
   return (
     isRecord(value) &&
     typeof value.type === 'string' &&
@@ -147,7 +147,7 @@ function isEntityTypeCount(value: unknown): value is EntityTypeCount {
   )
 }
 
-function entityFilterParams(filters: EntityFilters): URLSearchParams {
+export function entityFilterParams(filters: EntityFilters): URLSearchParams {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(filters)) {
     if (typeof value === 'string') params.set(key, value)

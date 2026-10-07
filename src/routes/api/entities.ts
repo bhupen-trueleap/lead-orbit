@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { MAX_ENTITY_QUERY_LENGTH, parseEntityFilters } from '@/lib/entities'
-import { getRequestEmail } from '@/server/auth'
+import { getAdminEmail } from '@/server/auth'
 import { listEntities } from '@/server/entities'
 import { DEFAULT_PAGE_SIZE, isResultCount, isPage } from '@/lib/pagination'
 
@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/entities')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!getRequestEmail(request)) {
+        if (!(await getAdminEmail(request))) {
           return new Response('Unauthorized', { status: 401 })
         }
 

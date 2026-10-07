@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { csvFileName, entityCsvHeader, entityCsvRow, toCsv } from '@/lib/csv'
 import { MAX_ENTITY_QUERY_LENGTH, parseEntityFilters } from '@/lib/entities'
-import { getRequestEmail } from '@/server/auth'
+import { getAdminEmail } from '@/server/auth'
 import { listColumns } from '@/server/columns'
 import { listEntities } from '@/server/entities'
 
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/entities-export')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (!getRequestEmail(request)) {
+        if (!(await getAdminEmail(request))) {
           return new Response('Unauthorized', { status: 401 })
         }
 

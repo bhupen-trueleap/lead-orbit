@@ -22,8 +22,10 @@ import {
 } from '@/lib/pagination'
 import type { ResultCount } from '@/lib/pagination'
 import type { EntitiesPage, EntityFilters as Filters } from '@/lib/entities'
+import { requireAdmin } from '@/lib/viewer'
 
 export const Route = createFileRoute('/_app/entities')({
+  beforeLoad: requireAdmin,
   validateSearch: (
     search: Record<string, unknown>,
   ): Filters & { page?: number; pageSize?: ResultCount; show?: string } => ({
@@ -166,7 +168,7 @@ function Entities() {
   const hasFilters = Boolean(q || type || site || addedFrom || addedTo)
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="space-y-6">
       <EntityFilters
         filters={filters}
         types={data?.types ?? []}
@@ -205,11 +207,11 @@ function Entities() {
       />
 
       <div aria-live="polite" className="text-sm text-muted-foreground">
-        {state === 'error' ? 'Could not load entities.' : null}
+        {state === 'error' ? 'Could not load the database.' : null}
         {state === 'ready' && total === 0
           ? hasFilters
-            ? 'No entities match these filters.'
-            : 'Nothing saved yet. Run a search to add entities.'
+            ? 'Nothing matches these filters.'
+            : 'Nothing saved yet. Run a search to fill the database.'
           : null}
       </div>
 

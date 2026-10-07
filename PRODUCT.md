@@ -8,7 +8,7 @@ web
 
 ## Users
 
-The internal growth and partnerships team at TrueLeap. They use LeadOrbit to find people and companies worth partnering with or reaching out to, such as founders, community builders, and startups in a given region or niche. Access is limited to TrueLeap staff through Cloudflare Access; there are no customer-facing users.
+The internal growth and partnerships team at TrueLeap. They use LeadOrbit to find people and companies worth partnering with or reaching out to, such as founders, community builders, and startups in a given region or niche. Access is invite-only through the app's own sign-in; there are no customer-facing users.
 
 ## Product Purpose
 
@@ -26,10 +26,10 @@ Natural-language search backed by a private database that grows with every searc
 
 ## Operating Context
 
-- Every search calls the Exa Search API directly (no database-first lookup), stores everything in PostgreSQL, and streams the results into a results table. Stored data is browsed and filtered on the Entities page.
+- Every search calls the Exa Search API directly (no database-first lookup), stores everything in PostgreSQL, and streams the results into a results table. Stored data is browsed and filtered on the Database page.
 - Results are people, companies, and web pages (news, articles). People and companies carry structured data from Exa: title, company, location, work history, headcount, funding, headquarters, web traffic.
 - Work happens on desktop in a browser, alongside LinkedIn, email, and a CRM.
-- Screens: Dashboard (search box, example prompts, recent searches), Searches (streaming results, filter, result count, save), Entities (the whole stored database with search, filters, sorting, pagination), Saved Searches, Collections (not built yet).
+- Screens: Dashboard (search box, example prompts, recent searches), Searches (streaming results, filter, result count, save), Database (the whole stored database with search, filters, sorting, pagination), Saved Searches, Lists (each person's own lists, shown as cards; private to the owner, admins can view everyone's read-only; each list is a full spreadsheet workbook built on Univer, with tabs, formulas, and formatting, autosaved; new lists start with a Leads tab and a starter header row; a list opens full screen with a Search panel on the right that pre-selects search columns from the active tab's header row, asks which unmatched headers to search for, and appends ticked results to the tab under matching headers, skipping URLs already in it; lists are standalone and nothing in them is copied to the shared database; users can run every search mode from this panel, with Agent runs confirmed), Collections (named lists filled from search results; list page with name search and sort, plus a detail page per collection with the Database toolbar: search, filters, sorting, column picker, remove, and CSV export).
 
 ## Capabilities and Constraints
 
@@ -39,9 +39,10 @@ Natural-language search backed by a private database that grows with every searc
 - Exa can only strictly filter by category, domains, and publish dates; location, title, seniority, headcount, funding, and follower counts cannot be enforced at search time and must be filtered on stored data afterwards.
 - LinkedIn follower counts appear in stored LinkedIn profile text but are not yet parsed into a filterable field.
 - Every search costs an Exa call, including repeats. Exa Websets (verified lists) is not available on the current Exa plan.
-- No app-level accounts or profiles. Saved searches and recent searches are scoped by the email Cloudflare Access provides.
+- Sign-in with Google or an emailed one-time code; only invited emails (`ADMIN_EMAILS`, `ALLOWED_EMAILS`) get in. The signed-in email identifies each person; saved searches, recent searches, and lists are scoped by it. Two roles: admins see the whole app; users see only Lists, their own CRM-style lists.
+- Collections are shared by everyone (no owner is stored) and hold people, companies, and pages. On the Searches page, ticked rows (or the whole result list when nothing is ticked) are added to a new or existing collection. A collection is a one-time copy: it keeps no link to the search it came from, and deleting it never deletes stored data. Inside a collection, pages respond to search text, Type, Site, and Date added only; a column filter hides them, and they are listed after people and companies.
 - Terminology: "entity" is any stored person, company, or organization; "page" is a stored web page; "saved search" is a bookmarked query.
-- Undecided: which CRM exports go to; query parsing with an LLM; semantic (vector) search; copying data into BigQuery for analytics; how Collections work.
+- Undecided: which CRM exports go to; query parsing with an LLM; semantic (vector) search; copying data into BigQuery for analytics.
 
 ## Brand Commitments
 

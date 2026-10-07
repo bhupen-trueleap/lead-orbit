@@ -15,13 +15,14 @@ import type { NavItem } from '@/config/app'
 
 interface AppSidebarProps {
   items: Array<NavItem>
+  showNewSearch: boolean
 }
 
 const iconClass = '[&_svg]:size-5'
 
 const activeClass = `${iconClass} data-active:bg-primary/15 data-active:text-foreground hover:bg-primary/20`
 
-export function AppSidebar({ items }: AppSidebarProps) {
+export function AppSidebar({ items, showNewSearch }: AppSidebarProps) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
@@ -32,21 +33,23 @@ export function AppSidebar({ items }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="New Search"
-                  render={<Link to="/searches" />}
-                  className={`${iconClass} mb-2 bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground`}
-                >
-                  <Plus />
-                  <span>New Search</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {showNewSearch ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip="New Search"
+                    render={<Link to="/searches" />}
+                    className={`${iconClass} mb-2 bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground`}
+                  >
+                    <Plus />
+                    <span>New Search</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : null}
               {items.map(({ label, to, icon: Icon }) => (
                 <SidebarMenuItem key={to}>
                   <SidebarMenuButton
                     tooltip={label}
-                    isActive={pathname === to}
+                    isActive={pathname === to || pathname.startsWith(`${to}/`)}
                     render={<Link to={to} />}
                     className={activeClass}
                   >

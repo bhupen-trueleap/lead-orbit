@@ -4,22 +4,27 @@ import { cn } from 'cn'
 
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
 import { navItems } from '@/config/app'
+import { UserMenu } from '@/components/layout/user-menu'
 
 interface AppHeaderProps {
   appName: string
+  email: string
 }
 
-export function AppHeader({ appName }: AppHeaderProps) {
+export function AppHeader({ appName, email }: AppHeaderProps) {
   const { state } = useSidebar()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const title = navItems.find((item) => item.to === pathname)?.label ?? appName
+  const title =
+    navItems.find(
+      (item) => item.to === pathname || pathname.startsWith(`${item.to}/`),
+    )?.label ?? appName
   const collapsed = state === 'collapsed'
 
   return (
     <header className="flex h-14 shrink-0 items-center border-b">
       <div
         className={cn(
-          'group/brand relative hidden h-full shrink-0 items-center border-r px-2 transition-[width] duration-200 ease-linear md:flex',
+          'group/brand relative hidden h-full shrink-0 items-center border-r px-2 transition-[width] duration-200 ease-out motion-reduce:transition-none md:flex',
           collapsed ? 'w-(--sidebar-width-icon)' : 'w-(--sidebar-width)',
         )}
       >
@@ -43,7 +48,10 @@ export function AppHeader({ appName }: AppHeaderProps) {
         />
       </div>
       <SidebarTrigger className="ml-4 md:hidden" />
-      <h1 className="truncate px-4 text-base font-semibold">{title}</h1>
+      <h1 className="min-w-0 flex-1 truncate px-4 text-base font-semibold">
+        {title}
+      </h1>
+      <UserMenu email={email} />
     </header>
   )
 }

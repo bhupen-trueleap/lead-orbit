@@ -3,9 +3,11 @@
 ## Mission
 
 - Build LeadOrbit: a web-based intelligent search and discovery platform for people, companies, and other entities using natural-language queries.
-- Search flow: every search calls the Exa API directly, stores all results in PostgreSQL, and streams them to the user. There is no database-first lookup; stored data is browsed and filtered on the Entities page.
+- Search flow: every search calls the Exa API directly, stores all results in PostgreSQL, and streams them to the user. There is no database-first lookup; stored data is browsed and filtered on the Database page.
 - Keep the codebase simple, composable, and reusable.
-- No app-level auth, user accounts, or profiles: access is gated by Cloudflare and limited to @trueleap.io users.
+- Collections are shared, hand-picked lists of stored people, companies, and pages, filled from search results on the Searches page.
+- Lists are each user's own spreadsheet workbooks (Univer): free-form tabs, formulas, and formatting, stored as one snapshot per list. They are standalone: nothing in a list is written to the shared database. A list opens full screen with a Search panel on the right; its search columns are pre-filled from the active tab's header row, and ticked results are appended to that tab under matching headers. Users (not only admins) can run searches from this panel.
+- Sign-in is in the app (Better Auth): Google, or a one-time code sent by email. Access is invite-only: only emails in `ADMIN_EMAILS` or `ALLOWED_EMAILS` can sign in. Admins see Dashboard, Searches, Database, Collections, and Lists; everyone else is a user who sees only Lists.
 - Prioritize fastest load time at deployment and fast SSR.
 - Ship in small, safe, incremental steps.
 
@@ -18,6 +20,7 @@
 - No unnecessary comments during implementation.
 - Ensure lint and format checks pass with zero errors/warnings before finishing a change.
 - Keep `CLAUDE.md` updated when the project direction changes.
+- Keep `TODO.md` updated: add parked features and open decisions there, and remove items when they ship.
 - Prefer reusable code and composable building blocks.
 - Keep SSR simple and fast.
 - Avoid unnecessary complexity.
@@ -46,3 +49,5 @@
 ## Documentation Index (Where to Look)
 
 - Project setup/context: `README.md`
+- Product, users, screens, and Exa limits: `PRODUCT.md`
+- Backlog and open decisions: `TODO.md`

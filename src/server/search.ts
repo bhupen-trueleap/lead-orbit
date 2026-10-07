@@ -12,17 +12,13 @@ import {
   searches,
   webPages,
 } from '@/db/schema'
-import type {
-  SearchCategory,
-  SearchEntity,
-  SearchEvent,
-  SearchMode,
-} from '@/lib/search'
+import type { SearchCategory, SearchEvent, SearchMode } from '@/lib/search'
 import { normalizeUrl } from '@/lib/url'
 import { searchExa } from '@/server/exa'
 import { runAgentSearch } from '@/server/agent-search'
 import type { AgentEffort } from '@/lib/agent'
 import { attachValues, loadEntityRows } from '@/server/result-rows'
+import { pageRow } from '@/server/entity-rows'
 import type { ResultRow } from '@/server/result-rows'
 import {
   buildSummarySchema,
@@ -48,20 +44,6 @@ interface SearchInput {
   effort: AgentEffort
   columns: Array<string>
   email: string
-}
-
-function pageRow(page: typeof webPages.$inferSelect): SearchEntity {
-  return {
-    id: page.id,
-    name: page.title ?? page.url,
-    url: page.url,
-    type: 'page',
-    role: page.author,
-    location: null,
-    highlight: page.highlights.at(0) ?? null,
-    values: {},
-    evidence: {},
-  }
 }
 
 async function upsertPage(

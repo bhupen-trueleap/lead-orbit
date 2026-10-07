@@ -8,8 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { fetchRecentSearches } from '@/lib/recent-searches'
 import { columnIdsToParam } from '@/lib/columns'
 import type { RecentSearch } from '@/lib/recent-searches'
+import { requireAdmin } from '@/lib/viewer'
 
-export const Route = createFileRoute('/_app/')({ component: Home })
+export const Route = createFileRoute('/_app/')({
+  beforeLoad: requireAdmin,
+  component: Home,
+})
 
 function Home() {
   const navigate = useNavigate()
@@ -30,7 +34,7 @@ function Home() {
   }, [])
 
   return (
-    <div className="mx-auto max-w-4xl space-y-10">
+    <div className="space-y-10">
       <PageSection title="Search anything">
         <SearchBox
           placeholder="Describe who or what you are looking for, e.g. fintech founders in Singapore"
@@ -57,7 +61,7 @@ function Home() {
             Could not load recent searches.
           </p>
         ) : recent === null ? (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {Array.from({ length: 2 }, (_, index) => (
               <Skeleton
                 key={index}
@@ -70,7 +74,7 @@ function Home() {
             No searches yet. Your recent searches will show up here.
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {recent.map((search) => (
               <RecentSearchCard key={search.id} {...search} />
             ))}

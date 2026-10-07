@@ -26,8 +26,10 @@ import {
   isPage,
 } from '@/lib/pagination'
 import type { ResultCount } from '@/lib/pagination'
+import { requireAdmin } from '@/lib/viewer'
 
 export const Route = createFileRoute('/_app/saved-searches')({
+  beforeLoad: requireAdmin,
   validateSearch: (
     search: Record<string, unknown>,
   ): SavedSearchFilters & { page?: number; pageSize?: ResultCount } => ({
@@ -117,7 +119,7 @@ function SavedSearches() {
   const hasFilters = Boolean(q || category)
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <div className="space-y-3">
         <DebouncedSearchInput
           value={filters.q}

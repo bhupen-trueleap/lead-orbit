@@ -16,6 +16,8 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 
+export * from './auth-schema'
+
 export const entities = pgTable(
   'entities',
   {
@@ -174,6 +176,57 @@ export const savedSearches = pgTable(
     unique()
       .on(table.createdByEmail, table.query, table.category)
       .nullsNotDistinct(),
+  ],
+)
+
+export const lists = pgTable(
+  'lists',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    ownerEmail: text().notNull(),
+    name: text().notNull(),
+    workbook: jsonb().$type<Record<string, unknown>>(),
+    rowCount: integer().notNull().default(0),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique().on(table.ownerEmail, table.name),
+    index().on(table.ownerEmail, table.updatedAt),
+  ],
+)
+
+export const collections = pgTable(
+  'collections',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull().unique(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index().on(table.updatedAt)],
+)
+
+export const collectionItems = pgTable(
+  'collection_items',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    collectionId: uuid()
+      .notNull()
+      .references(() => collections.id, { onDelete: 'cascade' }),
+    entityId: uuid().references(() => entities.id, { onDelete: 'cascade' }),
+    pageId: uuid().references(() => webPages.id, { onDelete: 'cascade' }),
+    addedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      'collection_items_target_check',
+      sql`num_nonnulls(${table.entityId}, ${table.pageId}) = 1`,
+    ),
+    unique().on(table.collectionId, table.entityId),
+    unique().on(table.collectionId, table.pageId),
+    index().on(table.entityId),
+    index().on(table.pageId),
   ],
 )
 

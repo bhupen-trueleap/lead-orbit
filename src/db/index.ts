@@ -9,7 +9,13 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL is not set')
 }
 
-export const db = drizzle(postgres(databaseUrl), {
+declare global {
+  var leadOrbitSql: ReturnType<typeof postgres> | undefined
+}
+
+globalThis.leadOrbitSql ??= postgres(databaseUrl)
+
+export const db = drizzle(globalThis.leadOrbitSql, {
   schema,
   casing: 'snake_case',
 })

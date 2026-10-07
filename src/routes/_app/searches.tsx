@@ -1,13 +1,20 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Download, Sparkles } from 'lucide-react'
+import { Download, Maximize2, Minimize2, Telescope } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { AddToCollection } from '@/components/search/add-to-collection'
 import { EntityTable } from '@/components/search/entity-table'
-import { SaveSearchButton } from '@/components/search/save-search-button'
 import { AgentProgress } from '@/components/search/agent-progress'
 import { SearchBox } from '@/components/search/search-box'
 import { SplitPane } from '@/components/split-pane'
+import { TableCard } from '@/components/table-card'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { TablePagination } from '@/components/table-pagination'
 import {
   DEFAULT_SEARCH_LIMIT,
@@ -30,8 +37,10 @@ import { DEFAULT_AGENT_EFFORT, isAgentEffort } from '@/lib/agent'
 import type { AgentEffort } from '@/lib/agent'
 import { DEFAULT_PAGE_SIZE, RESULT_COUNTS } from '@/lib/pagination'
 import type { ResultCount } from '@/lib/pagination'
+import { requireAdmin } from '@/lib/viewer'
 
 export const Route = createFileRoute('/_app/searches')({
+  beforeLoad: requireAdmin,
   validateSearch: (
     search: Record<string, unknown>,
   ): {
@@ -85,6 +94,8 @@ function Searches() {
   const startedRef = useRef(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<ResultCount>(DEFAULT_PAGE_SIZE)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState(false)
   const resultsRef = useRef<HTMLDivElement>(null)
 
   function revealResults() {
@@ -135,6 +146,10 @@ function Searches() {
   const currentPage = Math.min(page, lastPage)
   const pageStart = (currentPage - 1) * pageSize
   const visibleEntities = entities.slice(pageStart, pageStart + pageSize)
+  const selectedEntityIds = entities
+    .filter((entity) => selectedIds.has(entity.id))
+    .map((entity) => entity.id)
+  const hasSelection = selectedEntityIds.length > 0
 
   const searchPanel = (
     <div className="space-y-5">
@@ -151,6 +166,7 @@ function Searches() {
         confirmOnLoad={confirmOnLoad}
         onSearch={(next) => {
           setPage(1)
+          setSelectedIds(new Set())
           if (run) {
             void navigate({
               search: (prev) => ({ ...prev, run: undefined }),
@@ -161,70 +177,108 @@ function Searches() {
           requestAnimationFrame(revealResults)
         }}
       />
-      {request || agent ? (
-        <div className="space-y-3 border-t pt-4">
-          <div aria-live="polite" className="space-y-1 text-sm">
-            {isSearching && agent && startedAt !== null ? (
-              <AgentProgress status={agent.status} startedAt={startedAt} />
-            ) : isSearching ? (
-              <p className="text-muted-foreground">Searching…</p>
-            ) : (
-              <p className="font-medium">
-                {entities.length === 0
-                  ? 'No results found'
-                  : `${entities.length} ${entities.length === 1 ? 'result' : 'results'}`}
-              </p>
-            )}
-            {message ? (
-              <p className="text-muted-foreground">{message}</p>
-            ) : null}
-          </div>
-          {!isSearching ? (
-            <div className="flex flex-wrap gap-2">
-              {request ? (
-                <SaveSearchButton
-                  key={`${request.query}|${request.category}|${request.limit}|${request.mode}|${request.columns.join(',')}`}
-                  request={request}
-                />
-              ) : null}
-              {entities.length > 0 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    downloadCsv(
-                      csvFileName(request?.query ?? q ?? 'search'),
-                      toCsv([
-                        entityCsvHeader(columns),
-                        ...entities.map((entity) =>
-                          entityCsvRow(entity, columns),
-                        ),
-                      ]),
-                    )
-                  }
-                >
-                  <Download />
-                  Export CSV
-                </Button>
-              ) : null}
-            </div>
+      {isSearching || message ? (
+        <div aria-live="polite" className="space-y-1 border-t pt-4 text-sm">
+          {isSearching && agent && startedAt !== null ? (
+            <AgentProgress status={agent.status} startedAt={startedAt} />
+          ) : isSearching ? (
+            <p className="text-muted-foreground">Searching…</p>
           ) : null}
+          {message ? <p className="text-muted-foreground">{message}</p> : null}
         </div>
       ) : null}
     </div>
   )
 
-  const resultsPanel =
-    entities.length > 0 || isSearching ? (
-      <div className="space-y-4">
-        <EntityTable
-          entities={visibleEntities}
-          columns={columns}
-          isLoading={isSearching}
-          startIndex={pageStart}
-        />
-        {entities.length > 0 ? (
+  const hasResults = entities.length > 0
+  const showCard = hasResults || isSearching
+  const resultsTitle = isSearching
+    ? 'Searching…'
+    : hasSelection
+      ? `${selectedEntityIds.length} of ${entities.length} selected`
+      : `${entities.length} ${entities.length === 1 ? 'result' : 'results'}`
+
+  const renderCard = (inModal: boolean) => (
+    <TableCard
+      bare={inModal}
+      title={
+        inModal ? (
+          <div className="min-w-0">
+            <DialogTitle className="truncate text-base">
+              {request?.query ?? q ?? 'Search results'}
+            </DialogTitle>
+            <p className="text-xs font-normal text-muted-foreground">
+              {resultsTitle}
+            </p>
+          </div>
+        ) : (
+          resultsTitle
+        )
+      }
+      actions={
+        <>
+          {!isSearching && hasResults ? (
+            <>
+              <AddToCollection
+                ids={
+                  hasSelection
+                    ? selectedEntityIds
+                    : entities.map((entity) => entity.id)
+                }
+                isSelection={hasSelection}
+                onAdded={() => setSelectedIds(new Set())}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  downloadCsv(
+                    csvFileName(request?.query ?? q ?? 'search'),
+                    toCsv([
+                      entityCsvHeader(columns),
+                      ...entities.map((entity) =>
+                        entityCsvRow(entity, columns),
+                      ),
+                    ]),
+                  )
+                }
+              >
+                <Download />
+                Export CSV
+              </Button>
+            </>
+          ) : null}
+          {inModal ? (
+            <DialogClose
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Close expanded results"
+                  title="Close expanded results"
+                />
+              }
+            >
+              <Minimize2 />
+            </DialogClose>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Expand results"
+              title="Expand results"
+              onClick={() => setExpanded(true)}
+            >
+              <Maximize2 />
+            </Button>
+          )}
+        </>
+      }
+      footer={
+        hasResults ? (
           <TablePagination
             page={currentPage}
             pageSize={pageSize}
@@ -236,36 +290,54 @@ function Searches() {
               setPage(1)
             }}
           />
-        ) : null}
+        ) : null
+      }
+    >
+      <EntityTable
+        flush
+        entities={visibleEntities}
+        columns={columns}
+        isLoading={isSearching}
+        startIndex={pageStart}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+      />
+    </TableCard>
+  )
+
+  const resultsPanel = showCard ? (
+    renderCard(false)
+  ) : (
+    <div className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-xl border p-8 text-center @3xl:min-h-[calc(100svh-8.5rem)]">
+      <span className="flex size-10 items-center justify-center rounded-full bg-muted">
+        <Telescope aria-hidden="true" className="size-4.5" />
+      </span>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">
+          {status === 'done'
+            ? 'No results found'
+            : 'Run a search to see results'}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {status === 'done'
+            ? 'Try different wording or a deeper search'
+            : 'Press ↵ to search · results stream in live'}
+        </p>
       </div>
-    ) : (
-      <div className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-xl border p-8 text-center @3xl:min-h-[calc(100svh-8.5rem)]">
-        <span className="flex size-10 items-center justify-center rounded-full bg-muted">
-          <Sparkles aria-hidden="true" className="size-4.5" />
-        </span>
-        <div className="space-y-1">
-          <p className="text-sm font-medium">
-            {status === 'done'
-              ? 'No results found'
-              : 'Run a search to see results'}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {status === 'done'
-              ? 'Try different wording or a deeper search'
-              : 'Press ↵ to search · results stream in live'}
-          </p>
-        </div>
-      </div>
-    )
+    </div>
+  )
 
   return (
     <SplitPane
       label="Search panel"
-      storageKey="leadorbit.search-panel-width"
+      storageKey="leadorbit.search-panel-share"
       left={searchPanel}
       right={
         <div ref={resultsRef} className="scroll-mt-4">
           {resultsPanel}
+          <Dialog open={expanded && showCard} onOpenChange={setExpanded}>
+            <DialogContent size="screen">{renderCard(true)}</DialogContent>
+          </Dialog>
         </div>
       }
     />
