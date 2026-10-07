@@ -1,9 +1,11 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, Search } from 'lucide-react'
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
+import type { ComponentProps, ComponentType } from 'react'
 
 import { UserMenu } from '@/components/layout/user-menu'
 import { ListSearchPanel } from '@/components/lists/list-search-panel'
+import type ListWorkbookComponent from '@/components/lists/list-workbook'
 import type {
   SaveState,
   WorkbookHandle,
@@ -19,7 +21,14 @@ export const Route = createFileRoute('/_sheet/lists/$listId')({
 
 type LoadState = 'loading' | 'ready' | 'missing' | 'error'
 
-const ListWorkbook = lazy(() => import('@/components/lists/list-workbook'))
+const ListWorkbook = lazy(
+  (): Promise<{
+    default: ComponentType<ComponentProps<typeof ListWorkbookComponent>>
+  }> =>
+    import.meta.env.SSR
+      ? Promise.resolve({ default: () => null })
+      : import('@/components/lists/list-workbook'),
+)
 
 const saveLabels: Record<SaveState, string> = {
   saved: 'All changes saved',

@@ -37,6 +37,19 @@ Auth settings:
 
 Sign-in codes are not emailed yet: they are printed in the server log (`[auth] Sign-in code for …`).
 
+## Deploying to Cloudflare Workers
+
+The app builds for Cloudflare Workers through `@cloudflare/vite-plugin` (see `wrangler.jsonc`, with Node compatibility on). `pnpm dev` also runs the server in Cloudflare's runtime locally and reads secrets from `.env`.
+
+In the Cloudflare dashboard (Workers → lead-orbit → Settings → Build):
+
+- Build command: `pnpm run build`
+- Deploy command: `npx wrangler deploy`
+
+Set these as Worker secrets: `DATABASE_URL`, `EXA_API_KEY`, `ADMIN_EMAILS`, `ALLOWED_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+
+Workers cannot share a database connection between requests, so each request gets its own Postgres client (`withDatabase` in `src/server.ts`). The database must be reachable from Cloudflare; put Cloudflare Hyperdrive in front of it so these connections are pooled.
+
 ## Scripts
 
 | Command        | Description                       |

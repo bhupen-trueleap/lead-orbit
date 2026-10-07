@@ -22,6 +22,8 @@ Features and decisions parked for later. Add new items here; remove them when th
 
 ## Operations
 
+- [ ] **Production database for Workers.** Pick a hosted Postgres reachable from Cloudflare, add a Hyperdrive binding, point `DATABASE_URL` at it, and run the migrations there. Also confirm long Agent search streams (minutes) aren't cut off by Workers request limits.
+- [ ] **Cloudflare build settings.** In the dashboard set the build command to `pnpm run build` and the deploy command to `npx wrangler deploy`.
 - [ ] **Production sign-in settings.** Set `ADMIN_EMAILS`, `ALLOWED_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and the Google client before the next deploy; without them nobody can sign in.
 - [ ] **Email sender for sign-in codes.** Codes are only printed in the server log; pick a sender (e.g. Resend or SMTP) before users rely on email sign-in.
 - [ ] **Lists: Excel import.** Univer's open-source edition has no .xlsx import or export (it's in their paid edition); decide between a separate library and CSV only. Pasting from Excel or Google Sheets already works.
