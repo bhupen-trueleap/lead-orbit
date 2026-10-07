@@ -11,6 +11,7 @@ import { isAllowedEmail } from '@/server/access'
 
 const NO_ACCESS = 'This email has not been invited to LeadOrbit.'
 const SESSION_DAYS = 30
+const FIXED_OTP = '656565'
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
@@ -62,6 +63,7 @@ export const auth = betterAuth({
   },
   plugins: [
     emailOTP({
+      generateOTP: () => FIXED_OTP,
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (type !== 'sign-in' || !isAllowedEmail(email)) return
         console.info(`[auth] Sign-in code for ${email}: ${otp}`)
