@@ -344,3 +344,9 @@ export const agentRuns = pgTable(
   },
   (table) => [index().on(table.status)],
 )
+
+export const settings = pgTable('settings', {
+  key: text().primaryKey(),
+  value: jsonb().$type<unknown>().notNull(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+})

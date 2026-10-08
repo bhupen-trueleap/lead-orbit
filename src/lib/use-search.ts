@@ -13,6 +13,8 @@ export interface AgentProgress {
 }
 
 const FAILURE_MESSAGE = 'Search failed. Please try again.'
+const NOT_ALLOWED_MESSAGE =
+  'An admin has turned this kind of search off. Pick another search depth or ask an admin.'
 
 export function useSearch() {
   const [entities, setEntities] = useState<Array<SearchEntity>>([])
@@ -51,7 +53,9 @@ export function useSearch() {
 
         if (!response.ok || !response.body) {
           setStatus('error')
-          setMessage(FAILURE_MESSAGE)
+          setMessage(
+            response.status === 403 ? NOT_ALLOWED_MESSAGE : FAILURE_MESSAGE,
+          )
           return
         }
 

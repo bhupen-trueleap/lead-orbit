@@ -26,6 +26,7 @@ The app runs at http://localhost:3000. Postgres listens on `127.0.0.1:5432` only
 People sign in at `/login` with their email and a password. There is no self sign-up: an admin sets each person's password. Access is invite-only, and the invite list lives in the database (`auth_invite`: email and role):
 
 - Admins see the whole app; users see only Lists.
+- Admins choose in **Settings → User permissions** whether users can search from their lists and which search depths (Fast, Normal, Deep, Agent) they get. It is one setting for all users, enforced on the server; by default everything is allowed.
 - Anyone not on the list cannot sign in, even with a password, and loses access on their next request once removed.
 - `ADMIN_EMAILS` (comma-separated) is a fallback only: those emails are always admins, so the first admin can get in and nobody can lock everyone out. Everyone else belongs in the database.
 
@@ -34,7 +35,7 @@ Auth settings:
 - `BETTER_AUTH_SECRET`: a random secret, e.g. `openssl rand -base64 32`.
 - `BETTER_AUTH_URL`: the app's public URL (`http://localhost:3000` locally).
 
-Admins manage this on the **People** page: invite an email with a role and a password, change roles, reset passwords, and remove people. No email is sent; the admin shares the sign-in details. Admins can't remove or demote themselves or an `ADMIN_EMAILS` admin.
+Admins manage this in **Settings → People**: invite an email with a role and a password, change roles, reset passwords, and remove people. No email is sent; the admin shares the sign-in details. Admins can't remove or demote themselves or an `ADMIN_EMAILS` admin.
 
 The same actions are available from the terminal (useful for the first admin or when locked out):
 

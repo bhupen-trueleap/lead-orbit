@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { PeopleTable } from '@/components/people/people-table'
 import { PersonDialog } from '@/components/people/person-dialog'
+import { SettingsSection } from '@/components/settings/settings-layout'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,19 +17,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { changeRole, fetchPeople, removePerson } from '@/lib/people'
 import type { Person } from '@/lib/people'
-import { requireAdmin } from '@/lib/viewer'
 import type { Role } from '@/lib/viewer'
-
-export const Route = createFileRoute('/_app/people')({
-  beforeLoad: requireAdmin,
-  component: People,
-})
 
 type LoadState = 'loading' | 'ready' | 'error'
 
 type Editing = { mode: 'invite' } | { mode: 'password'; person: Person }
 
-function People() {
+export function PeopleSection() {
   const [people, setPeople] = useState<Array<Person>>([])
   const [state, setState] = useState<LoadState>('loading')
   const [message, setMessage] = useState<string | null>(null)
@@ -82,18 +76,21 @@ function People() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-sm text-muted-foreground">
-          Only the people here can sign in. Admins see the whole app; users see
-          only their own lists.
-        </p>
-        <Button type="button" onClick={() => setEditing({ mode: 'invite' })}>
+    <SettingsSection
+      title="People"
+      description="Only the people here can sign in. Admins see the whole app; users see only their own lists."
+      action={
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setEditing({ mode: 'invite' })}
+        >
           <UserPlus />
           Invite
         </Button>
-      </div>
-
+      }
+    >
       <div
         aria-live="polite"
         className="text-sm text-muted-foreground empty:hidden"
@@ -149,6 +146,6 @@ function People() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </SettingsSection>
   )
 }

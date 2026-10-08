@@ -17,12 +17,17 @@ function formatElapsed(ms: number): string {
   return `${minutes}:${String(seconds % 60).padStart(2, '0')}`
 }
 
-interface AgentProgressProps {
-  status: AgentRunStatus
+interface SearchProgressProps {
+  label: string
+  note: string
   startedAt: number
 }
 
-export function AgentProgress({ status, startedAt }: AgentProgressProps) {
+export function SearchProgress({
+  label,
+  note,
+  startedAt,
+}: SearchProgressProps) {
   const [now, setNow] = useState(startedAt)
 
   useEffect(() => {
@@ -38,15 +43,27 @@ export function AgentProgress({ status, startedAt }: AgentProgressProps) {
           aria-hidden="true"
           className="size-4 animate-spin text-muted-foreground motion-reduce:animate-none"
         />
-        {statusLabels[status]}…
+        {label}…
         <span className="ml-auto font-normal text-muted-foreground tabular-nums">
           {formatElapsed(now - startedAt)}
         </span>
       </p>
-      <p className="text-xs text-muted-foreground">
-        Agent runs usually take a minute or two. You can leave this page; the
-        results will be in Recent searches.
-      </p>
+      <p className="text-xs text-muted-foreground">{note}</p>
     </div>
+  )
+}
+
+interface AgentProgressProps {
+  status: AgentRunStatus
+  startedAt: number
+}
+
+export function AgentProgress({ status, startedAt }: AgentProgressProps) {
+  return (
+    <SearchProgress
+      label={statusLabels[status]}
+      note="Agent runs usually take a minute or two. You can leave this page; the results will be in Recent searches."
+      startedAt={startedAt}
+    />
   )
 }

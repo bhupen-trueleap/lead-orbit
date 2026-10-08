@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
+
 import type { SearchEvent } from '@/lib/search'
 
 const encoder = new TextEncoder()
@@ -9,10 +11,11 @@ function encodeEvent(event: SearchEvent): Uint8Array {
 export function eventStreamResponse(
   events: AsyncGenerator<SearchEvent>,
 ): Response {
+  const inRequest = AsyncLocalStorage.snapshot()
   const stream = new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
-        const next = await events.next()
+        const next = await inRequest(() => events.next())
         if (next.done) {
           controller.close()
         } else {
@@ -27,7 +30,7 @@ export function eventStreamResponse(
       }
     },
     async cancel() {
-      await events.return(undefined)
+      await inRequest(() => events.return(undefined))
     },
   })
 

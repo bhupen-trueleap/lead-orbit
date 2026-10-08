@@ -1,17 +1,39 @@
-import { Plus, RefreshCw, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { cn } from 'cn'
+import {
+  ArrowRight,
+  Maximize2,
+  Minimize2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  X,
+} from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
   SheetValue,
   WorkbookHandle,
 } from '@/components/lists/list-workbook'
-import { AgentProgress } from '@/components/search/agent-progress'
+import {
+  AgentProgress,
+  SearchProgress,
+} from '@/components/search/agent-progress'
+import { EntityTable } from '@/components/search/entity-table'
 import { SearchBox } from '@/components/search/search-box'
+import { TableCard } from '@/components/table-card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { createColumn, fetchColumns } from '@/lib/columns'
 import type { ColumnDef, FieldValue } from '@/lib/columns'
 import { entityTypeLabel } from '@/lib/labels'
+import { searchModeLabels, searchModeShortHints } from '@/lib/search'
+import type { SearchMode } from '@/lib/search'
 import { useSearch } from '@/lib/use-search'
 
 const NAME_HEADERS = ['name', 'full name', 'lead', 'person']
@@ -73,12 +95,14 @@ function planHeaders(
 interface ListSearchPanelProps {
   handle: WorkbookHandle | null
   canEdit: boolean
+  modes: ReadonlyArray<SearchMode>
   onClose: () => void
 }
 
 export function ListSearchPanel({
   handle,
   canEdit,
+  modes,
   onClose,
 }: ListSearchPanelProps) {
   const [columns, setColumns] = useState<Array<ColumnDef>>([])
@@ -88,11 +112,15 @@ export function ListSearchPanel({
   const [boxKey, setBoxKey] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [message, setMessage] = useState<string | null>(null)
+  const [view, setView] = useState<'form' | 'results'>('form')
+  const [expanded, setExpanded] = useState(false)
+  const resultsRef = useRef<HTMLDivElement>(null)
   const {
     entities,
     columns: resultColumns,
     status,
     message: searchMessage,
+    request,
     agent,
     startedAt,
     search,
@@ -124,6 +152,12 @@ export function ListSearchPanel({
   const defaultColumns = useMemo(() => [...plan.matched.keys()], [plan])
   const ready = columns.length > 0
   const isSearching = status === 'searching'
+  const hasSearch = status !== 'idle'
+  const showResults = view === 'results' && hasSearch
+
+  useEffect(() => {
+    if (view === 'results') resultsRef.current?.focus()
+  }, [view])
 
   async function createChosen() {
     setCreating(true)
@@ -174,6 +208,7 @@ export function ListSearchPanel({
     })
     const result = handle.appendRows(rows, urlHeader)
     setSelected(new Set())
+    setExpanded(false)
     setMessage(
       `Added ${result.added} ${result.added === 1 ? 'row' : 'rows'} to ${result.sheetName}` +
         (result.skipped > 0 ? `, ${result.skipped} already there.` : '.'),
@@ -181,6 +216,11 @@ export function ListSearchPanel({
   }
 
   const allSelected = entities.length > 0 && selected.size === entities.length
+  const resultsLabel = `${entities.length} ${entities.length === 1 ? 'result' : 'results'}`
+  const addLabel =
+    selected.size > 0
+      ? `Add ${selected.size} to the sheet`
+      : `Add all ${entities.length} to the sheet`
 
   return (
     <aside
@@ -200,7 +240,26 @@ export function ListSearchPanel({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+      <div
+        className={cn(
+          'min-h-0 flex-1 space-y-4 overflow-y-auto p-3',
+          showResults && 'hidden',
+        )}
+      >
+        {hasSearch ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full justify-between"
+            onClick={() => setView('results')}
+          >
+            {isSearching
+              ? 'Back to the search in progress'
+              : `Back to ${resultsLabel}`}
+            <ArrowRight />
+          </Button>
+        ) : null}
         <div className="space-y-2 rounded-lg bg-muted/50 p-3 text-xs">
           <div className="flex items-center justify-between gap-2">
             <p className="font-medium">Columns from this tab’s header row</p>
@@ -272,98 +331,161 @@ export function ListSearchPanel({
 
         {ready ? (
           <SearchBox
-            key={boxKey}
+            key={`${boxKey}-${modes.join()}`}
             layout="panel"
+            modes={modes}
             placeholder="Describe who you are looking for"
             defaultColumns={defaultColumns}
             keepColumnsOnTypeChange
             isSearching={isSearching}
-            onSearch={(request) => {
+            onSearch={(next) => {
               setSelected(new Set())
               setMessage(null)
-              void search(request)
+              setView('results')
+              void search(next)
             }}
           />
         ) : (
           <p className="text-sm text-muted-foreground">Loading…</p>
         )}
-
-        <div aria-live="polite" className="space-y-1 text-sm empty:hidden">
-          {isSearching && agent && startedAt !== null ? (
-            <AgentProgress status={agent.status} startedAt={startedAt} />
-          ) : isSearching ? (
-            <p className="text-muted-foreground">Searching…</p>
-          ) : null}
-          {searchMessage ? (
-            <p className="text-muted-foreground">{searchMessage}</p>
-          ) : null}
-          {status === 'done' && entities.length === 0 ? (
-            <p className="text-muted-foreground">No results found.</p>
-          ) : null}
-        </div>
-
-        {entities.length > 0 ? (
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={allSelected}
-                indeterminate={selected.size > 0 && !allSelected}
-                onCheckedChange={(checked) =>
-                  setSelected(
-                    checked
-                      ? new Set(entities.map((entity) => entity.id))
-                      : new Set(),
-                  )
-                }
-              />
-              {entities.length} {entities.length === 1 ? 'result' : 'results'}
-            </label>
-            <ul className="divide-y rounded-lg border">
-              {entities.map((entity) => (
-                <li key={entity.id}>
-                  <label className="flex cursor-pointer items-start gap-2.5 px-3 py-2.5 hover:bg-muted/50">
-                    <Checkbox
-                      className="mt-0.5"
-                      checked={selected.has(entity.id)}
-                      onCheckedChange={(checked) =>
-                        setSelected((current) => {
-                          const next = new Set(current)
-                          if (checked) next.add(entity.id)
-                          else next.delete(entity.id)
-                          return next
-                        })
-                      }
-                    />
-                    <span className="min-w-0 space-y-0.5">
-                      <span className="block truncate text-sm font-medium">
-                        {entity.name}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {[
-                          entity.role,
-                          entity.location,
-                          entityTypeLabel(entity.type, 'one'),
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
       </div>
 
-      {canEdit && (entities.length > 0 || message) ? (
+      {showResults ? (
+        <>
+          <div className="flex shrink-0 items-start gap-2 border-b p-3">
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <p className="line-clamp-2 text-sm font-medium break-words">
+                {request?.query ?? 'Search'}
+              </p>
+              {request ? (
+                <p className="text-xs text-muted-foreground">
+                  {searchModeLabels[request.mode]} · up to {request.limit} ·{' '}
+                  {request.columns.length}{' '}
+                  {request.columns.length === 1 ? 'column' : 'columns'}
+                </p>
+              ) : null}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setView('form')}
+            >
+              <Pencil />
+              Edit
+            </Button>
+          </div>
+
+          <div
+            ref={resultsRef}
+            tabIndex={-1}
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3 outline-hidden"
+          >
+            <div aria-live="polite" className="space-y-1 text-sm empty:hidden">
+              {isSearching && agent && startedAt !== null ? (
+                <AgentProgress status={agent.status} startedAt={startedAt} />
+              ) : isSearching && startedAt !== null ? (
+                <div className="space-y-2">
+                  <SearchProgress
+                    label="Searching"
+                    note={
+                      request
+                        ? `Usually takes ${searchModeShortHints[request.mode]}. Results appear here together when it finishes.`
+                        : 'Results appear here when it finishes.'
+                    }
+                    startedAt={startedAt}
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="h-1 animate-pulse rounded-full bg-primary/60 motion-reduce:animate-none"
+                  />
+                </div>
+              ) : null}
+              {searchMessage ? (
+                <p className="text-muted-foreground">{searchMessage}</p>
+              ) : null}
+              {status === 'done' && entities.length === 0 ? (
+                <p className="text-muted-foreground">
+                  No results found. Edit the search and try again.
+                </p>
+              ) : null}
+            </div>
+
+            {entities.length > 0 ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox
+                      checked={allSelected}
+                      indeterminate={selected.size > 0 && !allSelected}
+                      onCheckedChange={(checked) =>
+                        setSelected(
+                          checked
+                            ? new Set(entities.map((entity) => entity.id))
+                            : new Set(),
+                        )
+                      }
+                    />
+                    {resultsLabel}
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setExpanded(true)}
+                  >
+                    <Maximize2 />
+                    Expand
+                  </Button>
+                </div>
+                <ul className="divide-y rounded-lg border">
+                  {entities.map((entity) => (
+                    <li key={entity.id}>
+                      <label className="flex cursor-pointer items-start gap-2.5 px-3 py-2.5 hover:bg-muted/50">
+                        <Checkbox
+                          className="mt-0.5"
+                          checked={selected.has(entity.id)}
+                          onCheckedChange={(checked) =>
+                            setSelected((current) => {
+                              const next = new Set(current)
+                              if (checked) next.add(entity.id)
+                              else next.delete(entity.id)
+                              return next
+                            })
+                          }
+                        />
+                        <span className="min-w-0 space-y-0.5">
+                          <span className="block truncate text-sm font-medium">
+                            {entity.name}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {[
+                              entity.role,
+                              entity.location,
+                              entityTypeLabel(entity.type, 'one'),
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+
+      {canEdit && ((showResults && entities.length > 0) || message) ? (
         <div className="shrink-0 space-y-2 border-t p-3">
           {message ? (
             <p aria-live="polite" className="text-xs text-muted-foreground">
               {message}
             </p>
           ) : null}
-          {entities.length > 0 && !isSearching ? (
+          {showResults && entities.length > 0 && !isSearching ? (
             <Button
               type="button"
               className="w-full"
@@ -371,13 +493,70 @@ export function ListSearchPanel({
               onClick={addToSheet}
             >
               <Plus />
-              {selected.size > 0
-                ? `Add ${selected.size} to the sheet`
-                : `Add all ${entities.length} to the sheet`}
+              {addLabel}
             </Button>
           ) : null}
         </div>
       ) : null}
+
+      <Dialog
+        open={expanded && showResults && entities.length > 0}
+        onOpenChange={setExpanded}
+      >
+        <DialogContent size="screen">
+          <TableCard
+            bare
+            title={
+              <div className="min-w-0">
+                <DialogTitle className="truncate text-base">
+                  {request?.query ?? 'Search results'}
+                </DialogTitle>
+                <p className="text-xs font-normal text-muted-foreground">
+                  {selected.size > 0
+                    ? `${selected.size} of ${entities.length} selected`
+                    : resultsLabel}
+                </p>
+              </div>
+            }
+            actions={
+              <>
+                {canEdit && !isSearching ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!handle}
+                    onClick={addToSheet}
+                  >
+                    <Plus />
+                    {addLabel}
+                  </Button>
+                ) : null}
+                <DialogClose
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Close expanded results"
+                      title="Close expanded results"
+                    />
+                  }
+                >
+                  <Minimize2 />
+                </DialogClose>
+              </>
+            }
+          >
+            <EntityTable
+              flush
+              entities={entities}
+              columns={resultColumns}
+              selectedIds={selected}
+              onSelectionChange={setSelected}
+            />
+          </TableCard>
+        </DialogContent>
+      </Dialog>
     </aside>
   )
 }

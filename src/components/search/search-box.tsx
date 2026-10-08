@@ -50,6 +50,7 @@ interface SearchBoxProps {
   defaultLimit?: number
   defaultColumns?: Array<string>
   defaultMode?: SearchMode
+  modes?: ReadonlyArray<SearchMode>
   defaultEffort?: AgentEffort
   layout?: 'inline' | 'panel'
   isSearching?: boolean
@@ -91,6 +92,7 @@ export function SearchBox({
   defaultLimit = DEFAULT_SEARCH_LIMIT,
   defaultColumns,
   defaultMode = DEFAULT_SEARCH_MODE,
+  modes = SEARCH_MODES,
   defaultEffort = DEFAULT_AGENT_EFFORT,
   layout = 'inline',
   isSearching = false,
@@ -104,7 +106,9 @@ export function SearchBox({
   )
 
   const [limit, setLimit] = useState(clampSearchLimit(defaultLimit))
-  const [mode, setMode] = useState<SearchMode>(defaultMode)
+  const [mode, setMode] = useState<SearchMode>(
+    modes.includes(defaultMode) ? defaultMode : (modes.at(0) ?? defaultMode),
+  )
   const [effort, setEffort] = useState<AgentEffort>(defaultEffort)
   const [pending, setPending] = useState<SearchRequest | null>(null)
   const isAgent = mode === 'agent'
@@ -259,7 +263,7 @@ export function SearchBox({
             <p className="text-sm font-medium">Search depth</p>
             <SegmentedControl
               label="Search depth"
-              options={SEARCH_MODES.map((value) => ({
+              options={modes.map((value) => ({
                 value,
                 label: searchModeLabels[value],
                 hint: searchModeShortHints[value],
@@ -365,7 +369,7 @@ export function SearchBox({
           <OptionMenu
             label="Search depth"
             triggerLabel={searchModeLabels[mode]}
-            options={SEARCH_MODES.map((value) => ({
+            options={modes.map((value) => ({
               value,
               label: searchModeLabels[value],
               hint: searchModeHints[value],

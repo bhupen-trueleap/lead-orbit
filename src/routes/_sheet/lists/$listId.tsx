@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetchList, fetchWorkbook, saveWorkbook } from '@/lib/lists'
 import type { List, WorkbookSnapshot } from '@/lib/lists'
+import type { SearchMode } from '@/lib/search'
+import { allowedSearchModes, fetchUserSearchSettings } from '@/lib/settings'
 
 export const Route = createFileRoute('/_sheet/lists/$listId')({
   component: ListEditor,
@@ -47,6 +49,9 @@ function ListEditor() {
   const [saveState, setSaveState] = useState<SaveState>('saved')
   const [mounted, setMounted] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [searchModes, setSearchModes] = useState<Array<SearchMode>>(
+    allowedSearchModes(viewer.role, { enabled: false, modes: [] }),
+  )
   const [handle, setHandle] = useState<WorkbookHandle | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -57,6 +62,17 @@ function ListEditor() {
   }, [notice])
 
   useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
+    if (viewer.role === 'admin') return
+    const controller = new AbortController()
+    fetchUserSearchSettings(controller.signal)
+      .then((settings) => {
+        if (settings) setSearchModes(allowedSearchModes(viewer.role, settings))
+      })
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [viewer.role])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -139,7 +155,7 @@ function ListEditor() {
             onNotice={setNotice}
           />
         ) : null}
-        {list ? (
+        {list && searchModes.length > 0 ? (
           <Button
             type="button"
             variant={searchOpen ? 'secondary' : 'outline'}
@@ -183,11 +199,12 @@ function ListEditor() {
               <Skeleton className="h-full w-full rounded-none motion-reduce:animate-none" />
             )}
           </div>
-          {searchOpen ? (
+          {searchOpen && searchModes.length > 0 ? (
             <div className="absolute inset-0 z-20 md:static md:w-[26rem] md:shrink-0">
               <ListSearchPanel
                 handle={handle}
                 canEdit={canEdit}
+                modes={searchModes}
                 onClose={() => setSearchOpen(false)}
               />
             </div>
