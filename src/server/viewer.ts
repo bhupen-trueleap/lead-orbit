@@ -3,14 +3,9 @@ import { getRequest } from '@tanstack/react-start/server'
 
 import type { Viewer } from '@/lib/viewer'
 import { viewerFromHeaders } from '@/server/auth'
-import { googleEnabled } from '@/server/better-auth'
 
 const getViewer = createServerFn({ method: 'GET' }).handler(
   (): Promise<Viewer | null> => viewerFromHeaders(getRequest().headers),
-)
-
-export const getSignInOptions = createServerFn({ method: 'GET' }).handler(
-  () => ({ google: googleEnabled }),
 )
 
 let cachedViewer: Promise<Viewer | null> | null = null

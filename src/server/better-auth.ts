@@ -1,22 +1,16 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError } from 'better-auth/api'
-import { emailOTP } from 'better-auth/plugins'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { account, session, user, verification } from '@/db/auth-schema'
 import { isAllowedEmail } from '@/server/access'
+import { hashPassword, verifyPassword } from '@/server/password'
 
 const NO_ACCESS = 'This email has not been invited to LeadOrbit.'
 const SESSION_DAYS = 30
-const FIXED_OTP = '656565'
-
-const googleClientId = process.env.GOOGLE_CLIENT_ID
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
-
-export const googleEnabled = Boolean(googleClientId && googleClientSecret)
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
@@ -26,15 +20,11 @@ export const auth = betterAuth({
     schema: { user, session, account, verification },
   }),
   session: { expiresIn: SESSION_DAYS * 24 * 60 * 60 },
-  socialProviders:
-    googleClientId && googleClientSecret
-      ? {
-          google: {
-            clientId: googleClientId,
-            clientSecret: googleClientSecret,
-          },
-        }
-      : {},
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+    password: { hash: hashPassword, verify: verifyPassword },
+  },
   databaseHooks: {
     user: {
       create: {
@@ -61,14 +51,5 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [
-    emailOTP({
-      generateOTP: () => FIXED_OTP,
-      sendVerificationOTP: async ({ email, otp, type }) => {
-        if (type !== 'sign-in' || !isAllowedEmail(email)) return
-        console.info(`[auth] Sign-in code for ${email}: ${otp}`)
-      },
-    }),
-    tanstackStartCookies(),
-  ],
+  plugins: [tanstackStartCookies()],
 })
