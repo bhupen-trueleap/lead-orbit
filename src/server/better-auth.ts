@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { account, session, user, verification } from '@/db/auth-schema'
-import { isAllowedEmail } from '@/server/access'
+import { roleOf } from '@/server/access'
 import { hashPassword, verifyPassword } from '@/server/password'
 
 const NO_ACCESS = 'This email has not been invited to LeadOrbit.'
@@ -29,7 +29,7 @@ export const auth = betterAuth({
     user: {
       create: {
         before: async (newUser) => {
-          if (!isAllowedEmail(newUser.email)) {
+          if (!(await roleOf(newUser.email))) {
             throw new APIError('FORBIDDEN', { message: NO_ACCESS })
           }
         },
@@ -44,7 +44,7 @@ export const auth = betterAuth({
               .from(user)
               .where(eq(user.id, newSession.userId))
           ).at(0)
-          if (!owner || !isAllowedEmail(owner.email)) {
+          if (!owner || !(await roleOf(owner.email))) {
             throw new APIError('FORBIDDEN', { message: NO_ACCESS })
           }
         },

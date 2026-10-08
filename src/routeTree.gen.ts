@@ -14,6 +14,7 @@ import { Route as SheetRouteImport } from './routes/_sheet'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppEntitiesRouteImport } from './routes/_app/entities'
+import { Route as AppPeopleRouteImport } from './routes/_app/people'
 import { Route as AppSavedSearchesRouteImport } from './routes/_app/saved-searches'
 import { Route as AppSearchesRouteImport } from './routes/_app/searches'
 import { Route as ApiAgentRunRouteImport } from './routes/api/agent-run'
@@ -26,6 +27,7 @@ import { Route as ApiEntitiesRouteImport } from './routes/api/entities'
 import { Route as ApiEntitiesExportRouteImport } from './routes/api/entities-export'
 import { Route as ApiListWorkbookRouteImport } from './routes/api/list-workbook'
 import { Route as ApiListsRouteImport } from './routes/api/lists'
+import { Route as ApiPeopleRouteImport } from './routes/api/people'
 import { Route as ApiRecentSearchesRouteImport } from './routes/api/recent-searches'
 import { Route as ApiSavedSearchesRouteImport } from './routes/api/saved-searches'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
@@ -56,6 +58,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppEntitiesRoute = AppEntitiesRouteImport.update({
   id: '/entities',
   path: '/entities',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPeopleRoute = AppPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSavedSearchesRoute = AppSavedSearchesRouteImport.update({
@@ -118,6 +125,11 @@ const ApiListsRoute = ApiListsRouteImport.update({
   path: '/api/lists',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPeopleRoute = ApiPeopleRouteImport.update({
+  id: '/api/people',
+  path: '/api/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRecentSearchesRoute = ApiRecentSearchesRouteImport.update({
   id: '/api/recent-searches',
   path: '/api/recent-searches',
@@ -164,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/entities': typeof AppEntitiesRoute
+  '/people': typeof AppPeopleRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
   '/api/agent-run': typeof ApiAgentRunRoute
@@ -176,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/list-workbook': typeof ApiListWorkbookRoute
   '/api/lists': typeof ApiListsRoute
+  '/api/people': typeof ApiPeopleRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
@@ -189,6 +203,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/entities': typeof AppEntitiesRoute
+  '/people': typeof AppPeopleRoute
   '/saved-searches': typeof AppSavedSearchesRoute
   '/searches': typeof AppSearchesRoute
   '/api/agent-run': typeof ApiAgentRunRoute
@@ -201,6 +216,7 @@ export interface FileRoutesByTo {
   '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/list-workbook': typeof ApiListWorkbookRoute
   '/api/lists': typeof ApiListsRoute
+  '/api/people': typeof ApiPeopleRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
@@ -216,6 +232,7 @@ export interface FileRoutesById {
   '/_sheet': typeof SheetRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/entities': typeof AppEntitiesRoute
+  '/_app/people': typeof AppPeopleRoute
   '/_app/saved-searches': typeof AppSavedSearchesRoute
   '/_app/searches': typeof AppSearchesRoute
   '/api/agent-run': typeof ApiAgentRunRoute
@@ -228,6 +245,7 @@ export interface FileRoutesById {
   '/api/entities-export': typeof ApiEntitiesExportRoute
   '/api/list-workbook': typeof ApiListWorkbookRoute
   '/api/lists': typeof ApiListsRoute
+  '/api/people': typeof ApiPeopleRoute
   '/api/recent-searches': typeof ApiRecentSearchesRoute
   '/api/saved-searches': typeof ApiSavedSearchesRoute
   '/api/search': typeof ApiSearchRoute
@@ -244,6 +262,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/entities'
+    | '/people'
     | '/saved-searches'
     | '/searches'
     | '/api/agent-run'
@@ -256,6 +275,7 @@ export interface FileRouteTypes {
     | '/api/entities-export'
     | '/api/list-workbook'
     | '/api/lists'
+    | '/api/people'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
@@ -269,6 +289,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/entities'
+    | '/people'
     | '/saved-searches'
     | '/searches'
     | '/api/agent-run'
@@ -281,6 +302,7 @@ export interface FileRouteTypes {
     | '/api/entities-export'
     | '/api/list-workbook'
     | '/api/lists'
+    | '/api/people'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
@@ -295,6 +317,7 @@ export interface FileRouteTypes {
     | '/_sheet'
     | '/login'
     | '/_app/entities'
+    | '/_app/people'
     | '/_app/saved-searches'
     | '/_app/searches'
     | '/api/agent-run'
@@ -307,6 +330,7 @@ export interface FileRouteTypes {
     | '/api/entities-export'
     | '/api/list-workbook'
     | '/api/lists'
+    | '/api/people'
     | '/api/recent-searches'
     | '/api/saved-searches'
     | '/api/search'
@@ -332,6 +356,7 @@ export interface RootRouteChildren {
   ApiEntitiesExportRoute: typeof ApiEntitiesExportRoute
   ApiListWorkbookRoute: typeof ApiListWorkbookRoute
   ApiListsRoute: typeof ApiListsRoute
+  ApiPeopleRoute: typeof ApiPeopleRoute
   ApiRecentSearchesRoute: typeof ApiRecentSearchesRoute
   ApiSavedSearchesRoute: typeof ApiSavedSearchesRoute
   ApiSearchRoute: typeof ApiSearchRoute
@@ -373,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/entities'
       fullPath: '/entities'
       preLoaderRoute: typeof AppEntitiesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/people': {
+      id: '/_app/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof AppPeopleRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/saved-searches': {
@@ -459,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiListsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/people': {
+      id: '/api/people'
+      path: '/api/people'
+      fullPath: '/api/people'
+      preLoaderRoute: typeof ApiPeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/recent-searches': {
       id: '/api/recent-searches'
       path: '/api/recent-searches'
@@ -520,6 +559,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppEntitiesRoute: typeof AppEntitiesRoute
+  AppPeopleRoute: typeof AppPeopleRoute
   AppSavedSearchesRoute: typeof AppSavedSearchesRoute
   AppSearchesRoute: typeof AppSearchesRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -530,6 +570,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppEntitiesRoute: AppEntitiesRoute,
+  AppPeopleRoute: AppPeopleRoute,
   AppSavedSearchesRoute: AppSavedSearchesRoute,
   AppSearchesRoute: AppSearchesRoute,
   AppIndexRoute: AppIndexRoute,
@@ -564,6 +605,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEntitiesExportRoute: ApiEntitiesExportRoute,
   ApiListWorkbookRoute: ApiListWorkbookRoute,
   ApiListsRoute: ApiListsRoute,
+  ApiPeopleRoute: ApiPeopleRoute,
   ApiRecentSearchesRoute: ApiRecentSearchesRoute,
   ApiSavedSearchesRoute: ApiSavedSearchesRoute,
   ApiSearchRoute: ApiSearchRoute,

@@ -61,3 +61,11 @@ export const verification = pgTable(
   },
   (table) => [index().on(table.identifier)],
 )
+
+export const invite = pgTable('auth_invite', {
+  email: text().primaryKey(),
+  role: text({ enum: ['admin', 'user'] })
+    .notNull()
+    .default('user'),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+})

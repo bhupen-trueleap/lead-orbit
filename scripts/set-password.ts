@@ -6,10 +6,18 @@ import { hashPassword } from '../src/server/password.ts'
 
 const MIN_LENGTH = 8
 
-const args = process.argv.slice(2)
+const input = process.argv.slice(2)
+const args = input.filter((value) => !value.startsWith('--'))
+const requestedRole = input.includes('--admin')
+  ? 'admin'
+  : input.includes('--user')
+    ? 'user'
+    : null
 const email = (args.at(0) ?? '').trim().toLowerCase()
 if (!email.includes('@')) {
-  console.error('Usage: pnpm user:password <email> [password]')
+  console.error(
+    'Usage: pnpm user:password <email> [password] [--admin | --user]',
+  )
   process.exit(1)
 }
 
@@ -24,11 +32,6 @@ if (!url) {
   console.error('DATABASE_URL is not set.')
   process.exit(1)
 }
-
-const invited = [process.env.ADMIN_EMAILS, process.env.ALLOWED_EMAILS]
-  .flatMap((list) => (list ?? '').split(','))
-  .map((item) => item.trim().toLowerCase())
-  .includes(email)
 
 const sql = postgres(url, { max: 1 })
 const hash = await hashPassword(password)
@@ -54,17 +57,24 @@ try {
         values (${randomUUID()}, ${userId}, ${userId}, 'credential', ${hash})`
     }
     await tx`delete from auth_session where user_id = ${userId}`
-    return !existing
+    if (requestedRole) {
+      await tx`
+        insert into auth_invite (email, role)
+        values (${email}, ${requestedRole})
+        on conflict (email) do update set role = excluded.role`
+    } else {
+      await tx`
+        insert into auth_invite (email) values (${email})
+        on conflict (email) do nothing`
+    }
+    const invited = await tx<Array<{ role: string }>>`
+      select role from auth_invite where email = ${email}`
+    return { isNew: !existing, role: invited.at(0)?.role ?? 'user' }
   })
 
   console.info(
-    `${created ? 'Created' : 'Updated'} ${email}. Password: ${password}`,
+    `${created.isNew ? 'Created' : 'Updated'} ${email} (${created.role}). Password: ${password}`,
   )
-  if (!invited) {
-    console.warn(
-      `${email} is not in ADMIN_EMAILS or ALLOWED_EMAILS here, so sign-in will be refused until it is added.`,
-    )
-  }
 } finally {
   await sql.end()
 }

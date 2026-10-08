@@ -16,7 +16,9 @@
     "check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "user:password": "node --env-file-if-exists=.env scripts/set-password.ts"
+    "user:invite": "node --env-file-if-exists=.env scripts/invite-user.ts",
+    "user:password": "node --env-file-if-exists=.env scripts/set-password.ts",
+    "user:remove": "node --env-file-if-exists=.env scripts/remove-user.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

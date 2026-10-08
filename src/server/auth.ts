@@ -1,5 +1,5 @@
 import type { Viewer } from '@/lib/viewer'
-import { isAllowedEmail, roleFor } from '@/server/access'
+import { roleOf } from '@/server/access'
 import { auth } from '@/server/better-auth'
 
 export async function viewerFromHeaders(
@@ -7,8 +7,9 @@ export async function viewerFromHeaders(
 ): Promise<Viewer | null> {
   const current = await auth.api.getSession({ headers })
   const email = current?.user.email.toLowerCase()
-  if (!email || !isAllowedEmail(email)) return null
-  return { email, role: roleFor(email) }
+  if (!email) return null
+  const role = await roleOf(email)
+  return role ? { email, role } : null
 }
 
 export async function getRequestViewer(

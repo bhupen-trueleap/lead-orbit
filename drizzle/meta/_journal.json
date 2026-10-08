@@ -169,6 +169,13 @@
       "when": 1791357347558,
       "tag": "0023_list_workbooks",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791462443646,
+      "tag": "0024_invites",
+      "breakpoints": true
     }
   ]
 }

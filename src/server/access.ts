@@ -1,24 +1,26 @@
+import { eq } from 'drizzle-orm'
+
+import { db } from '@/db'
+import { invite } from '@/db/auth-schema'
 import type { Role } from '@/lib/viewer'
 
-function emailSet(value: string | undefined): Set<string> {
+export function fallbackAdmins(): Set<string> {
   return new Set(
-    (value ?? '')
+    (process.env.ADMIN_EMAILS ?? '')
       .split(',')
       .map((email) => email.trim().toLowerCase())
       .filter((email) => email !== ''),
   )
 }
 
-export function roleFor(email: string): Role {
-  return emailSet(process.env.ADMIN_EMAILS).has(email.toLowerCase())
-    ? 'admin'
-    : 'user'
-}
-
-export function isAllowedEmail(email: string): boolean {
+export async function roleOf(email: string): Promise<Role | null> {
   const normalized = email.trim().toLowerCase()
-  return (
-    roleFor(normalized) === 'admin' ||
-    emailSet(process.env.ALLOWED_EMAILS).has(normalized)
-  )
+  if (fallbackAdmins().has(normalized)) return 'admin'
+  const row = (
+    await db
+      .select({ role: invite.role })
+      .from(invite)
+      .where(eq(invite.email, normalized))
+  ).at(0)
+  return row?.role ?? null
 }

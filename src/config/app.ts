@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   List,
   Search,
+  Users,
 } from 'lucide-react'
 import type { LinkProps } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
@@ -32,6 +33,7 @@ export const navItems: Array<NavItem> = [
     adminOnly: true,
   },
   { label: 'Lists', to: '/lists', icon: List },
+  { label: 'People', to: '/people', icon: Users, adminOnly: true },
 ]
 
 export interface ExamplePrompt {

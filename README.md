@@ -23,25 +23,30 @@ The app runs at http://localhost:3000. Postgres listens on `127.0.0.1:5432` only
 
 ## Users and roles
 
-People sign in at `/login` with their email and a password. There is no self sign-up: an admin sets each person's password. Access is invite-only:
+People sign in at `/login` with their email and a password. There is no self sign-up: an admin sets each person's password. Access is invite-only, and the invite list lives in the database (`auth_invite`: email and role):
 
-- `ADMIN_EMAILS` (comma-separated): admins, who see the whole app.
-- `ALLOWED_EMAILS` (comma-separated): users, who see only Lists.
-- Anyone else cannot sign in, even with a password. Removing an email from both lists blocks their next sign-in; their current session lasts until it expires (30 days) or they sign out.
+- Admins see the whole app; users see only Lists.
+- Anyone not on the list cannot sign in, even with a password, and loses access on their next request once removed.
+- `ADMIN_EMAILS` (comma-separated) is a fallback only: those emails are always admins, so the first admin can get in and nobody can lock everyone out. Everyone else belongs in the database.
 
 Auth settings:
 
 - `BETTER_AUTH_SECRET`: a random secret, e.g. `openssl rand -base64 32`.
 - `BETTER_AUTH_URL`: the app's public URL (`http://localhost:3000` locally).
 
-To give someone access, add their email to `ADMIN_EMAILS` or `ALLOWED_EMAILS`, then set a password:
+Admins manage this on the **People** page: invite an email with a role and a password, change roles, reset passwords, and remove people. No email is sent; the admin shares the sign-in details. Admins can't remove or demote themselves or an `ADMIN_EMAILS` admin.
+
+The same actions are available from the terminal (useful for the first admin or when locked out):
 
 ```bash
-pnpm user:password person@company.com              # generates a password and prints it
-pnpm user:password person@company.com 'their-pass' # or choose one (8+ characters)
+pnpm user:password person@company.com              # invite as a user, generate a password and print it
+pnpm user:password person@company.com 'their-pass' # or choose the password (8+ characters)
+pnpm user:password person@company.com --admin      # invite as an admin
+pnpm user:invite person@company.com [--admin]      # invite or change role without touching the password
+pnpm user:remove person@company.com                # revoke access and sign them out
 ```
 
-Passwords are hashed with PBKDF2-SHA256 through Web Crypto (`src/server/password.ts`), which runs natively on Workers and stays inside the free plan's CPU limit. The same command resets a forgotten password and signs the person out everywhere. It uses `DATABASE_URL` from `.env`; for production, run it with the production URL: `DATABASE_URL='postgres://…' pnpm user:password …`.
+Passwords are hashed with PBKDF2-SHA256 through Web Crypto (`src/server/password.ts`), which runs natively on Workers and stays inside the free plan's CPU limit. `user:password` also resets a forgotten password and signs the person out everywhere. These commands use `DATABASE_URL` from `.env`; for production, run them with the production URL: `DATABASE_URL='postgres://…' pnpm user:password …`.
 
 ## Deploying to Cloudflare Workers
 
@@ -54,7 +59,7 @@ In the Cloudflare dashboard (Workers → lead-orbit → Settings → Build):
 
 Set `DATABASE_URL` as a build variable too (Settings → Build → Variables and secrets), since migrations run during the build. Use the production branch only for this build command; preview branches should use `pnpm run build` so they never migrate production.
 
-Set these as Worker secrets: `DATABASE_URL`, `EXA_API_KEY`, `ADMIN_EMAILS`, `ALLOWED_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
+Set these as Worker secrets: `DATABASE_URL`, `EXA_API_KEY`, `ADMIN_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
 
 Workers cannot share a database connection between requests, so each request gets its own Postgres client (`withDatabase` in `src/server.ts`). The database must be reachable from Cloudflare; put Cloudflare Hyperdrive in front of it so these connections are pooled.
 
