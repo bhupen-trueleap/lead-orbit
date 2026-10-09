@@ -1,7 +1,8 @@
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Download, FolderMinus } from 'lucide-react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Download, FolderMinus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { usePageCrumb } from '@/components/layout/page-crumb'
 import { ColumnPicker } from '@/components/search/column-picker'
 import { EntityFilters } from '@/components/search/entity-filters'
 import { EntityTable } from '@/components/search/entity-table'
@@ -195,24 +196,15 @@ function CollectionDetail() {
     setMessage('Could not remove the selected items. Please try again.')
   }
 
-  const backLink = (
-    <Link
-      to="/collections"
-      className="inline-flex items-center gap-1.5 rounded-sm text-sm text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <ArrowLeft className="size-4" />
-      All collections
-    </Link>
+  usePageCrumb(
+    state === 'missing' ? 'Not found' : (data?.collection.name ?? 'Loading…'),
   )
 
   if (state === 'missing') {
     return (
-      <div className="space-y-4">
-        {backLink}
-        <p className="text-sm text-muted-foreground">
-          This collection no longer exists.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        This collection no longer exists.
+      </p>
     )
   }
 
@@ -223,19 +215,11 @@ function CollectionDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        {backLink}
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h2 className="min-w-0 truncate text-lg font-medium">
-            {data?.collection.name ?? 'Loading…'}
-          </h2>
-          {data ? (
-            <p className="text-sm text-muted-foreground">
-              {itemCount} {itemCount === 1 ? 'item' : 'items'}
-            </p>
-          ) : null}
-        </div>
-      </div>
+      {data ? (
+        <p className="text-sm text-muted-foreground">
+          {itemCount} {itemCount === 1 ? 'item' : 'items'}
+        </p>
+      ) : null}
 
       <EntityFilters
         filters={filters}

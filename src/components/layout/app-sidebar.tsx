@@ -1,5 +1,4 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
 
 import {
   Sidebar,
@@ -15,14 +14,13 @@ import type { NavItem } from '@/config/app'
 
 interface AppSidebarProps {
   items: Array<NavItem>
-  showNewSearch: boolean
 }
 
 const iconClass = '[&_svg]:size-5'
 
-const activeClass = `${iconClass} data-active:bg-primary/15 data-active:text-foreground hover:bg-primary/20`
+const activeClass = `${iconClass} data-active:bg-sidebar-foreground/10 data-active:text-foreground hover:bg-sidebar-foreground/10 dark:hover:bg-sidebar-accent dark:data-active:bg-sidebar-accent`
 
-export function AppSidebar({ items, showNewSearch }: AppSidebarProps) {
+export function AppSidebar({ items }: AppSidebarProps) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
@@ -33,18 +31,6 @@ export function AppSidebar({ items, showNewSearch }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {showNewSearch ? (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    tooltip="New Search"
-                    render={<Link to="/searches" />}
-                    className={`${iconClass} mb-2 bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground`}
-                  >
-                    <Plus />
-                    <span>New Search</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ) : null}
               {items.map(({ label, to, icon: Icon }) => (
                 <SidebarMenuItem key={to}>
                   <SidebarMenuButton

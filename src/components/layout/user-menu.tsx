@@ -30,7 +30,7 @@ export function UserMenu({ email }: UserMenuProps) {
             variant="ghost"
             size="icon"
             aria-label={`Account: ${email}`}
-            className="mr-3 rounded-full bg-muted text-sm font-medium uppercase"
+            className="mr-3 rounded-full bg-primary text-sm font-medium text-primary-foreground uppercase hover:bg-primary/80 hover:text-primary-foreground aria-expanded:bg-primary/80 aria-expanded:text-primary-foreground"
           />
         }
       >

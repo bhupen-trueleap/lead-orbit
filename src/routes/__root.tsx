@@ -1,5 +1,8 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 
+import { themeScript } from '@/lib/theme'
+
+import favicon from '../favicon.svg?url'
 import appCss from '../styles.css?url'
 
 export const Route = createRootRoute({
@@ -21,6 +24,11 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: favicon,
+      },
     ],
   }),
   shellComponent: RootDocument,
@@ -28,8 +36,9 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <HeadContent />
       </head>
       <body>

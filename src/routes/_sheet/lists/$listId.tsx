@@ -3,6 +3,7 @@ import { ArrowLeft, Search } from 'lucide-react'
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
 import type { ComponentProps, ComponentType } from 'react'
 
+import { ThemeToggle } from '@/components/layout/theme-toggle'
 import { UserMenu } from '@/components/layout/user-menu'
 import { ListSearchPanel } from '@/components/lists/list-search-panel'
 import { WorkbookFileActions } from '@/components/lists/workbook-file-actions'
@@ -167,6 +168,7 @@ function ListEditor() {
             Search
           </Button>
         ) : null}
+        <ThemeToggle />
         <UserMenu email={viewer.email} />
       </header>
 

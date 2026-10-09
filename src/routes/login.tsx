@@ -54,7 +54,7 @@ function Login() {
     <main className="flex min-h-svh items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-2 text-center">
-          <Orbit className="mx-auto size-8" aria-hidden="true" />
+          <Orbit className="mx-auto size-8 text-primary" aria-hidden="true" />
           <h1 className="text-xl font-semibold">Sign in to {appConfig.name}</h1>
           <p className="text-sm text-muted-foreground">
             Access is by invitation.

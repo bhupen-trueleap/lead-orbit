@@ -15,6 +15,7 @@ import { useEffect, useRef } from 'react'
 import { isRecord } from '@/lib/guards'
 import type { CellInput, ImportTable } from '@/lib/database-import'
 import { isWorkbookData } from '@/lib/lists'
+import { currentTheme, subscribeTheme } from '@/lib/theme'
 
 export type SaveState = 'saved' | 'pending' | 'saving' | 'error'
 
@@ -154,6 +155,7 @@ export default function ListWorkbook({
       locale: LocaleType.EN_US,
       locales: { [LocaleType.EN_US]: mergeLocales(sheetsCoreEnUS) },
       theme: defaultTheme,
+      darkMode: currentTheme() === 'dark',
       presets: [UniverSheetsCorePreset({ container })],
     })
 
@@ -365,10 +367,14 @@ export default function ListWorkbook({
       if (changes.pending) event.preventDefault()
     }
     window.addEventListener('beforeunload', warnIfUnsaved)
+    const unsubscribeTheme = subscribeTheme(() => {
+      univerAPI.toggleDarkMode(currentTheme() === 'dark')
+    })
 
     return () => {
       callbacks.current.onReady?.(null)
       window.removeEventListener('beforeunload', warnIfUnsaved)
+      unsubscribeTheme()
       subscription.dispose()
       if (timer) clearTimeout(timer)
       if (changes.pending) void save()
