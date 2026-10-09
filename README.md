@@ -61,9 +61,9 @@ In the Cloudflare dashboard (Workers → lead-orbit → Settings → Build):
 
 Set `DATABASE_URL` as a build variable too (Settings → Build → Variables and secrets), since migrations run during the build. Use the production branch only for this build command; preview branches should use `pnpm run build` so they never migrate production.
 
-Set these as Worker secrets: `DATABASE_URL`, `EXA_API_KEY`, `ADMIN_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and, for emails, `BREVO_API_KEY` and `EMAIL_FROM`.
+Set these as Worker secrets: `EXA_API_KEY`, `ADMIN_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and, for emails, `BREVO_API_KEY` and `EMAIL_FROM`.
 
-Workers cannot share a database connection between requests, so each request gets its own Postgres client (`withDatabase` in `src/server.ts`). The database must be reachable from Cloudflare; put Cloudflare Hyperdrive in front of it so these connections are pooled.
+Workers cannot share a database connection between requests, so each request gets its own Postgres client (`withDatabase` in `src/server.ts`). The app reaches the database through Cloudflare Hyperdrive (the `HYPERDRIVE` binding in `wrangler.jsonc`, query caching off), which keeps connections pooled, and Smart Placement runs the Worker near the database. In `pnpm dev` the binding connects to `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` from `.env` (set it to the same value as `DATABASE_URL`). Migrations and the `pnpm user:*` commands still use `DATABASE_URL` directly.
 
 ## Scripts
 

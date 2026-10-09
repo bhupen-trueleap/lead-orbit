@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 
+import { env } from 'cloudflare:workers'
+
 import type { DrizzleConfig } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
@@ -16,10 +18,8 @@ const config = {
 } satisfies DrizzleConfig<typeof schema>
 
 function connect(): Database {
-  const url = process.env.DATABASE_URL
-  if (!url) throw new Error('DATABASE_URL is not set')
   return drizzle(
-    postgres(url, {
+    postgres(env.HYPERDRIVE.connectionString, {
       max: 5,
       idle_timeout: IDLE_TIMEOUT_SECONDS,
       fetch_types: false,

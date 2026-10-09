@@ -8,4 +8,13 @@
   "observability": {
     "enabled": true,
   },
+  "placement": {
+    "mode": "smart",
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "b4d8bd4c011f4dd4914e9e7f720c233c",
+    },
+  ],
 }

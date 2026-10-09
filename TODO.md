@@ -22,7 +22,7 @@ Features and decisions parked for later. Add new items here; remove them when th
 
 ## Operations
 
-- [ ] **Production database for Workers.** Pick a hosted Postgres reachable from Cloudflare, add a Hyperdrive binding, point `DATABASE_URL` at it, and run the migrations there. Also confirm long Agent search streams (minutes) aren't cut off by Workers request limits.
+- [ ] **Hyperdrive follow-ups.** The app now connects through Hyperdrive with Smart Placement. Still to do: point the Hyperdrive origin at Neon's direct host (it currently uses the `-pooler` host), measure page times after deploy, and confirm long Agent search streams (minutes) aren't cut off by Workers request limits.
 - [ ] **Cloudflare build settings.** In the dashboard set the build command to `pnpm run build:deploy` (migrates, then builds), add `DATABASE_URL` as a build variable, and set the deploy command to `npx wrangler deploy`.
 - [ ] **Production sign-in settings.** Set `ADMIN_EMAILS`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL` before the next deploy, then invite each person with `pnpm user:password` (or `pnpm user:invite` if they already have a password) against the production database; without them nobody can sign in. `ALLOWED_EMAILS` is no longer read and can be deleted from Cloudflare.
 - [ ] **Google sign-in.** Removed for now: the trueleap.io Google account can't create a Cloud project. Bring it back (Better Auth `socialProviders.google`) once an admin grants Project Creator or creates the project.
