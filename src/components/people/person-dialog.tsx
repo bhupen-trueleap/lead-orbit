@@ -22,7 +22,7 @@ import {
   parsePassword,
   resetPassword,
 } from '@/lib/people'
-import type { Person, SavePersonResult } from '@/lib/people'
+import type { EmailResult, Person, SavePersonResult } from '@/lib/people'
 import type { Role } from '@/lib/viewer'
 
 const roleOptions: ReadonlyArray<SegmentOption<Role>> = [
@@ -37,6 +37,14 @@ const failures: Record<Exclude<SavePersonResult, 'ok'>, string> = {
   error: 'Could not save. Please try again.',
 }
 
+const emailNotes: Record<EmailResult, string> = {
+  sent: 'We emailed these sign-in details to them. They’re here too in case the email doesn’t arrive.',
+  'not-configured':
+    'Email isn’t set up yet, so send these sign-in details to them yourself.',
+  failed:
+    'The email could not be sent, so send these sign-in details to them yourself.',
+}
+
 interface PersonDialogProps {
   person: Person | null
   onClose: () => void
@@ -49,7 +57,7 @@ export function PersonDialog({ person, onClose, onSaved }: PersonDialogProps) {
   const [password, setPassword] = useState(generatePassword)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
+  const [emailed, setEmailed] = useState<EmailResult | null>(null)
   const [copied, setCopied] = useState(false)
 
   const parsedEmail = parseEmail(email)
@@ -63,11 +71,11 @@ export function PersonDialog({ person, onClose, onSaved }: PersonDialogProps) {
       const result = person
         ? await resetPassword(parsedEmail, parsedPassword)
         : await invitePerson(parsedEmail, role, parsedPassword)
-      if (result === 'ok') {
-        setDone(true)
+      if (result.status === 'ok') {
+        setEmailed(result.email)
         onSaved()
       } else {
-        setError(failures[result])
+        setError(failures[result.status])
       }
     } catch {
       setError(failures.error)
@@ -94,15 +102,15 @@ export function PersonDialog({ person, onClose, onSaved }: PersonDialogProps) {
       }}
     >
       <DialogContent>
-        {done ? (
+        {emailed ? (
           <>
             <div className="space-y-1">
               <DialogTitle>
                 {person ? 'Password changed' : 'Invited'}
               </DialogTitle>
               <DialogDescription>
-                Send these sign-in details to {parsedEmail}. The password isn’t
-                shown again after you close this.
+                {emailNotes[emailed]} The password isn’t shown again after you
+                close this.
               </DialogDescription>
             </div>
             <dl className="space-y-2 rounded-lg border bg-muted/40 p-3 text-sm">
@@ -150,8 +158,8 @@ export function PersonDialog({ person, onClose, onSaved }: PersonDialogProps) {
               </DialogTitle>
               <DialogDescription>
                 {person
-                  ? `Set a new password for ${person.email}. They’re signed out everywhere and sign in again with it.`
-                  : 'They sign in with this email and the password you set here. No email is sent, so share the details yourself.'}
+                  ? `Set a new password for ${person.email}. They’re signed out everywhere and emailed the new password.`
+                  : 'They sign in with this email and the password you set here. They’re emailed the sign-in details.'}
               </DialogDescription>
             </div>
 

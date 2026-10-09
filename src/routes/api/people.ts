@@ -5,6 +5,7 @@ import { parseEmail, parsePassword, parseRole } from '@/lib/people'
 import type { SavePersonResult } from '@/lib/people'
 import type { Viewer } from '@/lib/viewer'
 import { getRequestViewer } from '@/server/auth'
+import { sendSignInDetails } from '@/server/email'
 import {
   changeRole,
   invitePerson,
@@ -54,7 +55,11 @@ export const Route = createFileRoute('/api/people')({
         const password = parsePassword(body.password)
         if (!email || !role || !password) return invalid()
 
-        return respond(await invitePerson(email, role, password))
+        const invited = await invitePerson(email, role, password)
+        if (invited !== 'ok') return respond(invited)
+        return Response.json({
+          email: await sendSignInDetails(email, password, 'invite'),
+        })
       },
       PATCH: async ({ request }) => {
         const viewer = await getAdmin(request)
@@ -71,9 +76,13 @@ export const Route = createFileRoute('/api/people')({
           const changed = await changeRole(viewer, email, role)
           if (changed !== 'ok' || !password) return respond(changed)
         }
-        return respond(
-          password ? await resetPassword(viewer, email, password) : 'ok',
-        )
+        if (!password) return respond('ok')
+
+        const reset = await resetPassword(viewer, email, password)
+        if (reset !== 'ok') return respond(reset)
+        return Response.json({
+          email: await sendSignInDetails(email, password, 'reset'),
+        })
       },
       DELETE: async ({ request }) => {
         const viewer = await getAdmin(request)

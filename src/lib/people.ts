@@ -18,6 +18,13 @@ export interface Person {
   isYou: boolean
 }
 
+export type EmailResult = 'sent' | 'not-configured' | 'failed'
+
+export interface PasswordResult {
+  status: SavePersonResult
+  email: EmailResult
+}
+
 export type SavePersonResult =
   'ok' | 'duplicate' | 'forbidden' | 'missing' | 'error'
 
@@ -78,20 +85,45 @@ function parsePerson(value: unknown): Person | null {
   }
 }
 
-async function send(
+function request(
   method: 'POST' | 'PATCH' | 'DELETE',
   body: unknown,
-): Promise<SavePersonResult> {
-  const response = await fetch('/api/people', {
+): Promise<Response> {
+  return fetch('/api/people', {
     method,
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   })
+}
+
+function statusOf(response: Response): SavePersonResult {
   if (response.ok) return 'ok'
   if (response.status === 409) return 'duplicate'
   if (response.status === 403) return 'forbidden'
   if (response.status === 404) return 'missing'
   return 'error'
+}
+
+async function send(
+  method: 'POST' | 'PATCH' | 'DELETE',
+  body: unknown,
+): Promise<SavePersonResult> {
+  return statusOf(await request(method, body))
+}
+
+async function sendPassword(
+  method: 'POST' | 'PATCH',
+  body: unknown,
+): Promise<PasswordResult> {
+  const response = await request(method, body)
+  const status = statusOf(response)
+  if (status !== 'ok') return { status, email: 'failed' }
+  const data: unknown = await response.json().catch(() => null)
+  const email = isRecord(data) ? data.email : null
+  return {
+    status,
+    email: email === 'sent' || email === 'not-configured' ? email : 'failed',
+  }
 }
 
 export async function fetchPeople(
@@ -111,8 +143,8 @@ export function invitePerson(
   email: string,
   role: Role,
   password: string,
-): Promise<SavePersonResult> {
-  return send('POST', { email, role, password })
+): Promise<PasswordResult> {
+  return sendPassword('POST', { email, role, password })
 }
 
 export function changeRole(
@@ -125,8 +157,8 @@ export function changeRole(
 export function resetPassword(
   email: string,
   password: string,
-): Promise<SavePersonResult> {
-  return send('PATCH', { email, password })
+): Promise<PasswordResult> {
+  return sendPassword('PATCH', { email, password })
 }
 
 export function removePerson(email: string): Promise<SavePersonResult> {

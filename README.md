@@ -33,9 +33,10 @@ People sign in at `/login` with their email and a password. There is no self sig
 Auth settings:
 
 - `BETTER_AUTH_SECRET`: a random secret, e.g. `openssl rand -base64 32`.
-- `BETTER_AUTH_URL`: the app's public URL (`http://localhost:3000` locally).
+- `BETTER_AUTH_URL`: the app's public URL (`http://localhost:3000` locally). Emails link to `<BETTER_AUTH_URL>/login`.
+- `BREVO_API_KEY`, `EMAIL_FROM`: optional. A Brevo API key and a sender address verified in Brevo (Senders → Add a sender; no DNS needed). Leave empty to send no email.
 
-Admins manage this in **Settings → People**: invite an email with a role and a password, change roles, reset passwords, and remove people. No email is sent; the admin shares the sign-in details. Admins can't remove or demote themselves or an `ADMIN_EMAILS` admin.
+Admins manage this in **Settings → People**: invite an email with a role and a password, change roles, reset passwords, and remove people. When email is set up, the person is emailed the sign-in address, their email, and the password (on invite and on password reset); the details are also shown to the admin once, in case the email does not arrive. Admins can't remove or demote themselves or an `ADMIN_EMAILS` admin.
 
 The same actions are available from the terminal (useful for the first admin or when locked out):
 
@@ -60,7 +61,7 @@ In the Cloudflare dashboard (Workers → lead-orbit → Settings → Build):
 
 Set `DATABASE_URL` as a build variable too (Settings → Build → Variables and secrets), since migrations run during the build. Use the production branch only for this build command; preview branches should use `pnpm run build` so they never migrate production.
 
-Set these as Worker secrets: `DATABASE_URL`, `EXA_API_KEY`, `ADMIN_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`.
+Set these as Worker secrets: `DATABASE_URL`, `EXA_API_KEY`, `ADMIN_EMAILS`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and, for emails, `BREVO_API_KEY` and `EMAIL_FROM`.
 
 Workers cannot share a database connection between requests, so each request gets its own Postgres client (`withDatabase` in `src/server.ts`). The database must be reachable from Cloudflare; put Cloudflare Hyperdrive in front of it so these connections are pooled.
 
